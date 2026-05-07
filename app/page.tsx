@@ -439,5 +439,25 @@ export default function DashboardPage() {
         onSubmit={handleCreateProduct}
       />
 
-     
+      {/* Quick Actions Footer Card */}
+      <footer className="mt-4">
+        <div className="bg-gradient-to-r from-indigo-600/10 to-transparent border border-indigo-500/10 p-6 sm:p-8 rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 overflow-hidden relative group">
+             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Package size={120} />
+             </div>
+             <div className="flex-1 relative z-10">
+                <h4 className="text-lg sm:text-xl font-bold text-white tracking-tight mb-2">Replenishment Intelligence</h4>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-xl leading-relaxed">
+                    Based on recent throughput, we recommend increasing the <span className="text-indigo-400 font-bold">Fasteners</span> stock levels. Predictive analysis suggests a 15% surge in material demand over the next extraction cycle.
+                </p>
+             </div>
+             <div className="relative z-10 flex gap-3 w-full sm:w-auto">
+                <button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-900/40 active:scale-95 transition-all">
+                    Initiate Restock
+                </button>
+             </div>
+        </div>
+      </footer>
+    </div>
+  );
 }
