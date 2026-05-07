@@ -25,7 +25,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
-  const userRole = user?.email?.includes('admin') ? 'Super Admin' : 'Field Operator';
+  const userRole = user?.email?.includes('admin') ? 'Super Admin' : 'Gym Attendance';
 
   return (
     <div className="flex h-screen bg-[#0A0A0C] text-slate-300 font-sans overflow-hidden">
