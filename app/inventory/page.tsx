@@ -19,6 +19,8 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+
   useEffect(() => {
     fetchInventory();
   }, []);
@@ -226,6 +228,20 @@ export default function InventoryPage() {
                 ))}
             </select>
         </div>
+        <div className="flex bg-slate-950 p-1 rounded-2xl border border-white/5 shrink-0">
+            <button 
+                onClick={() => setViewMode('table')}
+                className={`px-4 py-2 rounded-xl text-[10px] font-bold transition-all ${viewMode === 'table' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+                TABLE
+            </button>
+            <button 
+                onClick={() => setViewMode('grid')}
+                className={`px-4 py-2 rounded-xl text-[10px] font-bold transition-all ${viewMode === 'grid' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+                GRID
+            </button>
+        </div>
       </div>
 
       {/* Main Table */}
@@ -251,6 +267,7 @@ export default function InventoryPage() {
             <InventoryTable 
                 products={filteredProducts} 
                 onDelete={handleDeleteProduct}
+                viewMode={viewMode}
             />
         )}
       </div>
