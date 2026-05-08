@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Package, AlertTriangle, TrendingUp, Filter, ArrowUpRight, Plus } from 'lucide-react';
+import { Layers, AlertCircle, DollarSign, Truck, Filter, Plus, ArrowUpRight, TrendingUp, Package } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import InventoryTable from '@/components/inventory/inventory-table';
 import StockModal from '@/components/inventory/stock-modal';
@@ -21,6 +21,8 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -296,28 +298,28 @@ export default function DashboardPage() {
           <StatCard 
             title="Inventory SKUs" 
             value={totals.skuCount} 
-            icon={Package} 
+            icon={Layers} 
             color="bg-indigo-500"
             trend={{ value: '12.4%', isUp: true }}
           />
           <StatCard 
             title="Critical Overlays" 
             value={totals.lowStockCount} 
-            icon={AlertTriangle} 
+            icon={AlertCircle} 
             color="bg-rose-500"
             trend={{ value: '8.1%', isUp: false }}
           />
           <StatCard 
             title="Asset Valuation" 
             value={totals.totalValue} 
-            icon={TrendingUp} 
+            icon={DollarSign} 
             color="bg-emerald-500"
             trend={{ value: '4.2%', isUp: true }}
           />
           <StatCard 
             title="Monthly Outflow" 
             value={totals.monthlyOutflow} 
-            icon={ArrowUpRight} 
+            icon={Truck} 
             color="bg-amber-500"
             trend={{ value: 'Usage Log', isUp: true }}
           />
@@ -414,8 +416,18 @@ export default function DashboardPage() {
             </div>
             <div className="hidden sm:block h-6 w-[1px] bg-slate-800 mx-1" />
             <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 shrink-0">
-                <button className="px-3 py-1 bg-slate-800 rounded-lg text-[10px] font-bold text-white shadow-inner">TABLE</button>
-                <button className="px-3 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:text-slate-400">GRID</button>
+                <button 
+                  onClick={() => setViewMode('table')}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${viewMode === 'table' ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-600 hover:text-slate-400'}`}
+                >
+                  TABLE
+                </button>
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${viewMode === 'grid' ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-600 hover:text-slate-400'}`}
+                >
+                  GRID
+                </button>
             </div>
           </div>
         </div>
@@ -423,6 +435,7 @@ export default function DashboardPage() {
         <InventoryTable 
           products={filteredProducts} 
           onDelete={handleDeleteProduct}
+          viewMode={viewMode}
         />
       </section>
       
@@ -440,22 +453,19 @@ export default function DashboardPage() {
       />
 
       {/* Quick Actions Footer Card */}
-      <footer className="mt-4">
-        <div className="bg-gradient-to-r from-indigo-600/10 to-transparent border border-indigo-500/10 p-6 sm:p-8 rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 overflow-hidden relative group">
-             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Package size={120} />
-             </div>
-             <div className="flex-1 relative z-10">
-                <h4 className="text-lg sm:text-xl font-bold text-white tracking-tight mb-2">Replenishment Intelligence</h4>
-                <p className="text-xs sm:text-sm text-slate-500 max-w-xl leading-relaxed">
-                    Based on recent throughput, we recommend increasing the <span className="text-indigo-400 font-bold">Fasteners</span> stock levels. Predictive analysis suggests a 15% surge in material demand over the next extraction cycle.
-                </p>
-             </div>
-             <div className="relative z-10 flex gap-3 w-full sm:w-auto">
-                <button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-900/40 active:scale-95 transition-all">
-                    Initiate Restock
-                </button>
-             </div>
+      <footer className="mt-12 py-10 border-t border-white/5">
+        <div className="flex flex-col items-center justify-center gap-2">
+            <div className="flex items-center gap-2 mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.4em]">Mesh Infrastructure</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+            </div>
+            <p className="text-sm font-bold text-slate-400 tracking-tight">
+                Dibuat oleh <span className="text-white">Candra</span>
+            </p>
+            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                Obsidian v2.4.0 • Logistix Mesh Control
+            </p>
         </div>
       </footer>
     </div>
