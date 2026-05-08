@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Transaction, Product } from '@/types/inventory';
-import { History, ArrowUpCircle, ArrowDownCircle, Search, Calendar, FileText, Package, Trash2, Download, ChevronDown } from 'lucide-react';
+import { History, ArrowUpCircle, ArrowDownCircle, Search, Calendar, FileText, Package, Trash2, Download, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 
@@ -12,6 +12,8 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchTransactions();
@@ -108,6 +110,12 @@ export default function TransactionsPage() {
     t.products?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.note?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.id.slice(0, 8).includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   return (
@@ -216,7 +224,7 @@ export default function TransactionsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((t) => {
+                paginatedTransactions.map((t) => {
                   const operatorMatch = t.note?.match(/^\[Operator: (.*?)\]/);
                   const operator = t.user_name || (operatorMatch ? operatorMatch[1] : 'System');
                   const cleanNote = t.note?.replace(/^\[Operator: .*?\]\s?/, '') || '';
@@ -289,6 +297,50 @@ export default function TransactionsPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Pagination Footer */}
+      <div className="mt-8 border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-[10px] text-slate-500 font-bold uppercase tracking-[0.1em]">
+        <div className="flex flex-col gap-1 text-center sm:text-left">
+          <p>
+            Audit Trail Protocol: <span className="text-indigo-400">RFC-5424 Active</span>
+          </p>
+          <p>
+            Showing: <span className="text-white">{(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> of <span className="text-white">{filteredTransactions.length}</span> Records
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="p-2 border border-white/5 rounded-xl hover:bg-white/5 transition-all disabled:opacity-20 flex items-center gap-2 px-4 group"
+          >
+            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="hidden xs:inline text-[8px]">PREVIOUS</span>
+          </button>
+
+          <div className="flex gap-1 overflow-x-auto max-w-[120px] sm:max-w-none no-scrollbar px-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button 
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`min-w-[32px] h-8 flex items-center justify-center rounded-xl transition-all ${currentPage === page ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-white/5 text-slate-400'}`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="p-2 border border-white/5 rounded-xl hover:bg-white/5 transition-all disabled:opacity-20 flex items-center gap-2 px-4 group"
+          >
+            <span className="hidden xs:inline text-[8px]">NEXT</span>
+            <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
       </div>
     </div>
