@@ -15,7 +15,9 @@ import {
   DollarSign,
   Package,
   History,
-  Box
+  Box,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -30,6 +32,8 @@ export default function LaundryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<LaundryRecord | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [formData, setFormData] = useState({
     item_name: '',
@@ -162,6 +166,12 @@ export default function LaundryPage() {
     pendingBatches: records.filter(r => r.status !== 'returned').length
   };
 
+  const totalPages = Math.ceil(records.length / itemsPerPage);
+  const paginatedRecords = records.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="min-h-screen bg-[#050505] p-4 sm:p-8 pt-20">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -240,105 +250,146 @@ export default function LaundryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {isLoading ? (
-                  Array(3).fill(0).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td colSpan={6} className="p-8 h-12 bg-white/[0.01]" />
-                    </tr>
-                  ))
-                ) : records.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-20 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <History size={40} className="text-slate-700" />
-                        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">No laundry history found</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  records.map((record) => {
-                    const linkedProduct = inventoryProducts.find(p => p.id === record.product_id);
-                    
-                    return (
-                      <tr key={record.id} className="hover:bg-white/[0.01] transition-colors group">
-                        <td className="p-4 sm:p-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                              <Package size={14} className="text-indigo-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-white tracking-tight">{record.item_name}</p>
-                              <p className="text-[10px] text-slate-500 font-mono italic">Op: {record.operator_name || 'System'}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 sm:p-6">
-                          <StatusBadge status={record.status} />
-                        </td>
-                        <td className="p-4 sm:p-6">
-                          <div className="flex flex-col">
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-lg font-mono font-black text-white">{record.quantity_in}</span>
-                              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">/ {record.quantity_out} UNITS</span>
-                            </div>
-                            {linkedProduct && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <Box size={10} className="text-slate-600" />
-                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                                  Wh Stock: {linkedProduct.stock_quantity}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4 sm:p-6 hidden md:table-cell">
-                          <p className="text-xs font-bold text-emerald-400">Rp {Number(record.total_cost).toLocaleString()}</p>
-                          <p className="text-[9px] text-slate-600 font-medium">@{Number(record.unit_cost).toLocaleString()}/unit</p>
-                        </td>
-                        <td className="p-4 sm:p-6 hidden sm:table-cell">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
-                              <ArrowUpRight size={10} className="text-rose-500" />
-                              {new Date(record.sent_at).toLocaleDateString()}
-                            </div>
-                            {record.returned_at && (
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
-                                <ArrowDownLeft size={10} className="text-emerald-500" />
-                                {new Date(record.returned_at).toLocaleDateString()}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4 sm:p-6 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {record.status !== 'returned' && (
-                              <button 
-                                onClick={() => {
-                                  setSelectedRecord(record);
-                                  setIsReturnModalOpen(true);
-                                }}
-                                className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors border border-indigo-500/20"
-                              >
-                                <ArrowDownLeft size={16} />
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => handleDelete(record.id)}
-                              className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
+                <AnimatePresence mode="popLayout">
+                  {isLoading ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td colSpan={6} className="p-8 h-12 bg-white/[0.01]" />
                       </tr>
-                    );
-                  })
-                )}
+                    ))
+                  ) : records.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-20 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <History size={40} className="text-slate-700" />
+                          <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">No laundry history found</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedRecords.map((record) => {
+                      const linkedProduct = inventoryProducts.find(p => p.id === record.product_id);
+                      
+                      return (
+                        <motion.tr 
+                          layout
+                          key={record.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="hover:bg-white/[0.01] transition-colors group"
+                        >
+                          <td className="p-4 sm:p-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                                <Package size={14} className="text-indigo-400" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-white tracking-tight">{record.item_name}</p>
+                                <p className="text-[10px] text-slate-500 font-mono italic">Op: {record.operator_name || 'System'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 sm:p-6">
+                            <StatusBadge status={record.status} />
+                          </td>
+                          <td className="p-4 sm:p-6">
+                            <div className="flex flex-col">
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-lg font-mono font-black text-white">{record.quantity_in}</span>
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">/ {record.quantity_out} UNITS</span>
+                              </div>
+                              {linkedProduct && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Box size={10} className="text-slate-600" />
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                                    Wh Stock: {linkedProduct.stock_quantity}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 sm:p-6 hidden md:table-cell">
+                            <p className="text-xs font-bold text-emerald-400">Rp {Number(record.total_cost).toLocaleString()}</p>
+                            <p className="text-[9px] text-slate-600 font-medium">@{Number(record.unit_cost).toLocaleString()}/unit</p>
+                          </td>
+                          <td className="p-4 sm:p-6 hidden sm:table-cell">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                                <ArrowUpRight size={10} className="text-rose-500" />
+                                {new Date(record.sent_at).toLocaleDateString()}
+                              </div>
+                              {record.returned_at && (
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                                  <ArrowDownLeft size={10} className="text-emerald-500" />
+                                  {new Date(record.returned_at).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 sm:p-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {record.status !== 'returned' && (
+                                <button 
+                                  onClick={() => {
+                                    setSelectedRecord(record);
+                                    setIsReturnModalOpen(true);
+                                  }}
+                                  className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors border border-indigo-500/20"
+                                >
+                                  <ArrowDownLeft size={16} />
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => handleDelete(record.id)}
+                                className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    })
+                  )}
+                </AnimatePresence>
               </tbody>
             </table>
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="p-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-slate-500 font-bold uppercase tracking-[0.1em]">
+          <p>Module 04: <span className="text-slate-300">Sanitation Flow Audit</span> | Page <span className="text-white">{currentPage}/{totalPages || 1}</span></p>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 border border-white/5 rounded-xl hover:bg-white/5 transition-all disabled:opacity-20"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex gap-1 overflow-x-auto max-w-[120px] no-scrollbar">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button 
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`min-w-[32px] h-8 flex items-center justify-center rounded-xl transition-all ${currentPage === page ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-white/5 text-slate-400'}`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="p-2 border border-white/5 rounded-xl hover:bg-white/5 transition-all disabled:opacity-20"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
       {/* Manual Input Modal */}
       <AnimatePresence>
