@@ -25,7 +25,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
-  const userRole = user?.email?.includes('admin') ? 'Super Admin' : 'Gym Attendance';
+  const userRole = user?.email?.includes('admin') ? 'Super Admin' : 'Field Operator';
 
   return (
     <div className="flex h-screen bg-[#0A0A0C] text-slate-300 font-sans overflow-hidden">
@@ -143,7 +143,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </button>
             <div className="hidden sm:block">
               <h1 className="text-lg lg:text-xl font-bold text-white tracking-tight">StockFlow</h1>
-              <p className="text-[10px] lg:text-xs text-slate-500 font-medium">Obsidian</p>
+              <p className="text-[10px] lg:text-xs text-slate-500 font-medium">Obsidian 1</p>
             </div>
           </div>
           
