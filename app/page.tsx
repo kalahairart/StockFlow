@@ -11,6 +11,7 @@ import { Product, Transaction, MovementData } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -162,6 +163,26 @@ export default function DashboardPage() {
         throw new Error(transError.message);
       }
 
+      // 2. Fetch updated product info to check critical stock
+      const { data: updatedProduct, error: productError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', data.product_id)
+        .single();
+
+      if (!productError && updatedProduct) {
+        if (updatedProduct.stock_quantity <= updatedProduct.min_stock) {
+          toast.error(`Critical Stock: ${updatedProduct.name}`, {
+            description: `Stock level fell to ${updatedProduct.stock_quantity}. threshold: ${updatedProduct.min_stock}`,
+            duration: 5000,
+          });
+        } else {
+          toast.success(`Stock Updated: ${updatedProduct.name}`, {
+            description: `Successfully recorded ${data.type === 'in' ? 'receipt' : 'withdrawal'} of ${data.quantity} units.`,
+          });
+        }
+      }
+
       // If it's an 'in' transaction, update the product's unit_cost
       if (data.type === 'in' && data.unit_cost > 0) {
         const { error: updateError } = await supabase
@@ -203,6 +224,10 @@ export default function DashboardPage() {
         console.error('Dashboard Product Create Error:', productsError);
         throw new Error(productsError.message);
       }
+
+      toast.success(`SKU Registered: ${data.name.trim()}`, {
+        description: 'New product added to inventory mesh.',
+      });
 
       // Step 2: Record the initial balance as a transaction
       if (data.stock_quantity > 0 && newProduct) {
@@ -248,6 +273,9 @@ export default function DashboardPage() {
 
       if (error) throw error;
       setProducts(products.filter(p => p.id !== id));
+      toast.success('Asset Purged', {
+        description: 'Product and associated transaction history removed from mesh.',
+      });
       await fetchDashboardData(); // Refresh chart/stats
     } catch (err) {
       alert('Delete failed: ' + (err as Error).message);
