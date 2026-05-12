@@ -9,6 +9,7 @@ import { Product } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 export default function InventoryPage() {
   const { user } = useAuth();
@@ -84,6 +85,10 @@ export default function InventoryPage() {
         throw new Error('Product created but no data returned from mesh.');
       }
 
+      toast.success(`Asset Registered: ${data.name.trim()}`, {
+        description: 'New SKU successfully added to terminal mapping.',
+      });
+
       console.log('Product registered successfully:', newProduct);
 
       // Step 2: Record the initial balance as a transaction
@@ -135,6 +140,26 @@ export default function InventoryPage() {
         throw new Error(transError.message);
       }
 
+      // 2. Fetch updated product to check critical stock
+      const { data: updatedProduct, error: productError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', data.product_id)
+        .single();
+      
+      if (!productError && updatedProduct) {
+        if (updatedProduct.stock_quantity <= updatedProduct.min_stock) {
+           toast.error(`Critical Stock: ${updatedProduct.name}`, {
+             description: `Stock level fell to ${updatedProduct.stock_quantity}. threshold: ${updatedProduct.min_stock}`,
+             duration: 5000,
+           });
+        } else {
+           toast.success(`Mesh Update Complete: ${updatedProduct.name}`, {
+             description: `${data.type.toUpperCase()} transaction logged for ${data.quantity} units.`,
+           });
+        }
+      }
+
       // If it's an 'in' transaction, update the product's unit_cost
       if (data.type === 'in' && data.unit_cost > 0) {
         const { error: updateError } = await supabase
@@ -159,6 +184,9 @@ export default function InventoryPage() {
       await supabase.from('transactions').delete().eq('product_id', id);
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
+      toast.success('Asset Deleted', {
+        description: 'Product record has been successfully purged from inventory.',
+      });
       await fetchInventory();
     } catch (err) {
       alert('Deletion failed: ' + (err as Error).message);
