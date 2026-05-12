@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { LaundryRecord, Product } from '@/types/inventory';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 
 export default function LaundryPage() {
   const { user } = useAuth();
@@ -101,6 +102,26 @@ export default function LaundryPage() {
         }
         throw error;
       }
+
+      toast.success(`Dispatch Confirmed: ${formData.item_name}`, {
+        description: `Successfully dispatched ${formData.quantity_out} units for sanitation.`,
+      });
+
+      // Check if product became critical after dispatch
+      if (formData.product_id) {
+          const { data: updatedProduct, error: pError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', formData.product_id)
+            .single();
+          
+          if (!pError && updatedProduct && updatedProduct.stock_quantity <= updatedProduct.min_stock) {
+            toast.error(`Critical Stock Warning: ${updatedProduct.name}`, {
+                description: `Remaining warehouse stock: ${updatedProduct.stock_quantity}. threshold: ${updatedProduct.min_stock}`,
+                duration: 6000,
+            });
+          }
+      }
       
       setIsModalOpen(false);
       setFormData({ item_name: '', product_id: null, quantity_out: 0, unit_cost: 0, note: '' });
@@ -133,6 +154,31 @@ export default function LaundryPage() {
 
       if (error) throw error;
 
+      toast.success(`Return Logged: ${selectedRecord.item_name}`, {
+        description: `Successfully received ${returnQuantity} units back into inventory.`,
+      });
+
+      // Check if product was critical and is now restored (optional, but let's at least show success)
+      if (selectedRecord.product_id) {
+          const { data: updatedProduct, error: pError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', selectedRecord.product_id)
+            .single();
+          
+          if (!pError && updatedProduct) {
+              if (updatedProduct.stock_quantity > updatedProduct.min_stock) {
+                  toast.success(`Stock Restored: ${updatedProduct.name}`, {
+                      description: `Current quantity: ${updatedProduct.stock_quantity} (Above threshold).`,
+                  });
+              } else {
+                  toast.warning(`Still Critical: ${updatedProduct.name}`, {
+                      description: `Current quantity: ${updatedProduct.stock_quantity}. threshold: ${updatedProduct.min_stock}`,
+                  });
+              }
+          }
+      }
+
       setIsReturnModalOpen(false);
       setSelectedRecord(null);
       setReturnQuantity(0);
@@ -151,6 +197,9 @@ export default function LaundryPage() {
         .eq('id', id);
 
       if (error) throw error;
+      toast.success('Record Deleted', {
+        description: 'Laundry operation record cleared from history.',
+      });
       await fetchRecords();
     } catch (err) {
       alert('Delete failed: ' + (err as Error).message);
