@@ -125,7 +125,7 @@ export default function RegisterPage() {
           <div className="mt-8 pt-8 border-t border-white/5 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
               Already a member?{' '}
-              <Link href="/auth/login" className="text-indigo-400 hover:text-indigo-300 ml-1">
+              <Link href="/auth/login" prefetch={false} className="text-indigo-400 hover:text-indigo-300 ml-1">
                 Establish Session
               </Link>
             </p>
