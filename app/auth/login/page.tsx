@@ -94,7 +94,7 @@ export default function LoginPage() {
             >
               {loading ? 'Validating...' : (
                 <>
-                  Login
+                  Establish Session
                   <ArrowRight size={16} />
                 </>
               )}
@@ -104,7 +104,7 @@ export default function LoginPage() {
           <div className="mt-8 pt-8 border-t border-white/5 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
               No identity vector yet?{' '}
-              <Link href="/auth/register" className="text-indigo-400 hover:text-indigo-300 ml-1">
+              <Link href="/auth/register" prefetch={false} className="text-indigo-400 hover:text-indigo-300 ml-1">
                 Initialize Account
               </Link>
             </p>
