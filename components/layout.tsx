@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine } from 'lucide-react';
+import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
-  const userRole = user?.email?.includes('admin') ? 'Super Admin' : 'Gym Attendance';
+  const userRole = user?.email?.includes('admin') ? 'Super Admin' : 'Field Operator';
 
   return (
     <div className="flex h-screen bg-[#0A0A0C] text-slate-300 font-sans overflow-hidden">
@@ -56,12 +56,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               </div>
                 <nav className="flex-1 space-y-2">
-                  <NavItem icon={LayoutDashboard} label="Dashboard" href="/" active={pathname === '/'} onClick={() => setIsMobileMenuOpen(false)} />
-                  <NavItem icon={Box} label="Inventory" href="/inventory" active={pathname === '/inventory'} onClick={() => setIsMobileMenuOpen(false)} />
-                  <NavItem icon={WashingMachine} label="Laundry Ops" href="/laundry" active={pathname === '/laundry'} onClick={() => setIsMobileMenuOpen(false)} />
-                  <NavItem icon={History} label="Transactions" href="/transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
-                  <NavItem icon={Settings} label="System Config" href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
-                </nav>
+          <NavItem icon={LayoutDashboard} label="Dashboard" href="/" active={pathname === '/'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={Box} label="Inventory" href="/inventory" active={pathname === '/inventory'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={WashingMachine} label="Laundry Ops" href="/laundry" active={pathname === '/laundry'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={History} label="Transactions" href="/transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={HelpCircle} label="User Guide" href="/guide" active={pathname === '/guide'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={Settings} label="System Config" href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
+        </nav>
 
                 <div className="pt-6 border-t border-white/5">
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex items-center gap-4">
@@ -106,6 +107,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={Box} label="Inventory" href="/inventory" active={pathname === '/inventory'} />
           <NavItem icon={WashingMachine} label="Laundry Ops" href="/laundry" active={pathname === '/laundry'} />
           <NavItem icon={History} label="Transactions" href="/transactions" active={pathname === '/transactions'} />
+          <NavItem icon={HelpCircle} label="User Guide" href="/guide" active={pathname === '/guide'} />
           <NavItem icon={Settings} label="System Config" href="/settings" active={pathname === '/settings'} />
         </nav>
         
@@ -172,6 +174,7 @@ function NavItem({ icon: Icon, label, href, active = false, onClick }: { icon: a
     <Link 
       href={href} 
       onClick={onClick}
+      prefetch={false}
       className={`flex items-center gap-4 px-5 py-3.5 rounded-xl transition-all group relative ${
         active 
           ? 'bg-indigo-600/10 text-white border border-indigo-500/20 shadow-sm' 
