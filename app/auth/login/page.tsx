@@ -94,7 +94,7 @@ export default function LoginPage() {
             >
               {loading ? 'Validating...' : (
                 <>
-                  Establish Session
+                  Login
                   <ArrowRight size={16} />
                 </>
               )}
