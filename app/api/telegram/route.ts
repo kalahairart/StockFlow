@@ -26,7 +26,11 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Telegram API error:', errorData);
-      return NextResponse.json({ error: 'Failed to send Telegram message' }, { status: response.status });
+      // Return the actual error description from Telegram for easier debugging
+      return NextResponse.json({ 
+        error: errorData.description || 'Failed to send Telegram message',
+        details: errorData 
+      }, { status: response.status });
     }
 
     return NextResponse.json({ success: true });
