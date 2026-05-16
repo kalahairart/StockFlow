@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { X, Package, Tag, Hash, AlertCircle, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '@/hooks/use-language';
 
 const productSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -26,6 +27,7 @@ interface ProductModalProps {
 }
 
 export default function ProductModal({ isOpen, onClose, onSubmit, initialData, title }: ProductModalProps) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -92,7 +94,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, initialData, t
                   <Package size={24} className="sm:w-8 sm:h-8" />
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{title || 'Register New SKU'}</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{title || t.common.registerSku}</h2>
                   <p className="text-slate-500 text-[9px] sm:text-xs font-bold uppercase tracking-widest mt-1">System Asset Onboarding</p>
                 </div>
               </div>
@@ -101,7 +103,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, initialData, t
                 <div className="space-y-4 sm:space-y-6">
                   {/* Name */}
                   <div className="space-y-2 sm:space-y-3">
-                    <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Product Descriptor</label>
+                    <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.productDescriptor}</label>
                     <div className="relative">
                       <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                       <input
@@ -115,7 +117,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, initialData, t
 
                   {/* Category */}
                   <div className="space-y-2 sm:space-y-3">
-                    <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Item Category</label>
+                    <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.itemCategory}</label>
                     <div className="relative">
                       <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                       <input
@@ -129,7 +131,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, initialData, t
 
                   {/* Initial Balance */}
                   <div className="space-y-2 sm:space-y-3">
-                    <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Initial Balance</label>
+                    <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.initialBalance}</label>
                     <div className="relative">
                       <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                       <input
@@ -145,7 +147,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, initialData, t
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     {/* Unit Cost */}
                     <div className="space-y-2 sm:space-y-3">
-                      <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Acquisition Cost</label>
+                      <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.acquisitionCost}</label>
                       <div className="relative">
                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                         <input
@@ -161,7 +163,7 @@ export default function ProductModal({ isOpen, onClose, onSubmit, initialData, t
 
                     {/* Min Stock */}
                     <div className="space-y-2 sm:space-y-3">
-                      <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Warn Threshold</label>
+                      <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.warnThreshold}</label>
                       <div className="relative">
                         <AlertCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                         <input
@@ -182,13 +184,13 @@ export default function ProductModal({ isOpen, onClose, onSubmit, initialData, t
                     onClick={onClose}
                     className="order-2 sm:order-1 flex-1 px-6 py-3 sm:py-4 rounded-2xl font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm uppercase tracking-widest"
                   >
-                    Discard
+                    {t.common.discard}
                   </button>
                   <button
                     disabled={isLoading}
                     className="order-1 sm:order-2 flex-1 px-6 py-3 sm:py-4 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-2xl shadow-indigo-900/40 transition-all text-xs sm:text-sm uppercase tracking-widest disabled:opacity-50 active:scale-95"
                   >
-                    {isLoading ? 'SYNCING...' : title ? 'UPDATE ITEM' : 'INITIATE ITEM'}
+                    {isLoading ? t.common.syncing.toUpperCase() : title ? t.common.updateItem.toUpperCase() : t.common.initiateItem.toUpperCase()}
                   </button>
                 </div>
               </form>
