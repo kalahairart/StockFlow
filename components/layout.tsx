@@ -1,16 +1,18 @@
 'use client';
 
-import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle } from 'lucide-react';
+import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
 
   const isAuthPage = pathname.startsWith('/auth');
@@ -56,12 +58,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               </div>
                 <nav className="flex-1 space-y-2">
-          <NavItem icon={LayoutDashboard} label="Dashboard" href="/" active={pathname === '/'} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem icon={Box} label="Inventory" href="/inventory" active={pathname === '/inventory'} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem icon={WashingMachine} label="Laundry Ops" href="/laundry" active={pathname === '/laundry'} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem icon={History} label="Transactions" href="/transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem icon={HelpCircle} label="User Guide" href="/guide" active={pathname === '/guide'} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem icon={Settings} label="System Config" href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={LayoutDashboard} label={t.common.dashboard} href="/" active={pathname === '/'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={Box} label={t.common.inventory} href="/inventory" active={pathname === '/inventory'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
         </nav>
 
                 <div className="pt-6 border-t border-white/5">
@@ -103,12 +105,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
         
         <nav className="flex-1 px-4 py-8 space-y-1">
-          <NavItem icon={LayoutDashboard} label="Dashboard" href="/" active={pathname === '/'} />
-          <NavItem icon={Box} label="Inventory" href="/inventory" active={pathname === '/inventory'} />
-          <NavItem icon={WashingMachine} label="Laundry Ops" href="/laundry" active={pathname === '/laundry'} />
-          <NavItem icon={History} label="Transactions" href="/transactions" active={pathname === '/transactions'} />
-          <NavItem icon={HelpCircle} label="User Guide" href="/guide" active={pathname === '/guide'} />
-          <NavItem icon={Settings} label="System Config" href="/settings" active={pathname === '/settings'} />
+          <NavItem icon={LayoutDashboard} label={t.common.dashboard} href="/" active={pathname === '/'} />
+          <NavItem icon={Box} label={t.common.inventory} href="/inventory" active={pathname === '/inventory'} />
+          <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} />
+          <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} />
+          <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} />
+          <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} />
         </nav>
         
         <div className="p-6 border-t border-slate-900">
@@ -150,6 +152,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
           
           <div className="flex items-center gap-3 lg:gap-6 flex-1 justify-end">
+            <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5">
+              <button 
+                onClick={() => setLanguage('id')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${language === 'id' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                ID
+              </button>
+              <button 
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${language === 'en' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                EN
+              </button>
+            </div>
             {/* Header Actions Removed */}
           </div>
         </header>
