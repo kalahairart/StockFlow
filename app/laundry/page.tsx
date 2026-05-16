@@ -24,9 +24,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { LaundryRecord, Product } from '@/types/inventory';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function LaundryPage() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [records, setRecords] = useState<LaundryRecord[]>([]);
   const [inventoryProducts, setInventoryProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -237,7 +239,7 @@ export default function LaundryPage() {
               </h1>
             </div>
             <p className="text-slate-500 font-medium text-sm tracking-wide">
-              External item flow and sanitation tracking.
+              {t.laundry.subtitle}
             </p>
           </div>
 
@@ -247,7 +249,7 @@ export default function LaundryPage() {
               className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-500/20 group"
             >
               <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-              SEND ITEMS
+              {t.laundry.newBatch.toUpperCase()}
             </button>
           </div>
         </div>
@@ -256,28 +258,28 @@ export default function LaundryPage() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <StatCard 
             icon={Box} 
-            label="Total Towel Stock" 
+            label={t.laundry.totalStock} 
             value={stats.warehouseStock.toString()} 
             color="text-blue-400"
             bgColor="bg-blue-500/10"
           />
           <StatCard 
             icon={ArrowUpRight} 
-            label="Items in Cycle" 
+            label={t.laundry.itemsInCycle} 
             value={stats.totalItemsOut.toString()} 
             color="text-indigo-400"
             bgColor="bg-indigo-500/10"
           />
           <StatCard 
             icon={DollarSign} 
-            label="Total Expenditure" 
+            label={t.laundry.totalExpenditure} 
             value={`Rp ${stats.totalCost.toLocaleString()}`} 
             color="text-emerald-400"
             bgColor="bg-emerald-500/10"
           />
           <StatCard 
             icon={Clock} 
-            label="Pending Batches" 
+            label={t.laundry.pendingBatches} 
             value={stats.pendingBatches.toString()} 
             color="text-amber-400"
             bgColor="bg-amber-500/10"
@@ -290,12 +292,12 @@ export default function LaundryPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Item Name</th>
-                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Status</th>
-                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Flow (Out/In)</th>
-                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] hidden md:table-cell">Cost</th>
-                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] hidden sm:table-cell">Timeline</th>
-                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-right">Actions</th>
+                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t.inventory.table.toUpperCase()}</th>
+                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t.common.status.toUpperCase()}</th>
+                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t.common.quantity.toUpperCase()} (Out/In)</th>
+                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] hidden md:table-cell">{t.common.totalCost.toUpperCase()}</th>
+                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] hidden sm:table-cell">{t.common.date.toUpperCase()}</th>
+                  <th className="p-4 sm:p-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-right">{t.common.action.toUpperCase()}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -311,7 +313,7 @@ export default function LaundryPage() {
                       <td colSpan={6} className="p-20 text-center">
                         <div className="flex flex-col items-center gap-3">
                           <History size={40} className="text-slate-700" />
-                          <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">No laundry history found</p>
+                          <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">{language === 'id' ? 'Tidak ada riwayat laundry ditemukan' : 'No laundry history found'}</p>
                         </div>
                       </td>
                     </tr>
@@ -460,14 +462,14 @@ export default function LaundryPage() {
               <div className="p-8 border-b border-white/5 bg-white/[0.02]">
                 <h3 className="text-xl font-black text-white italic uppercase flex items-center gap-3">
                   <ArrowUpRight className="text-indigo-400" size={24} />
-                  Initiate <span className="text-indigo-500">Dispatch</span>
+                  {t.laundry.initiateDispatch.split(' ')[0]} <span className="text-indigo-500">{t.laundry.initiateDispatch.split(' ')[1]}</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Register items for external cleaning</p>
+                <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">{language === 'id' ? 'Daftarkan barang untuk pencucian eksternal' : 'Register items for external cleaning'}</p>
               </div>
 
               <form onSubmit={handleCreate} className="p-8 space-y-6">
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Link to Inventory (Optional)</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">{language === 'id' ? 'Tautkan ke Inventaris (Opsional)' : 'Link to Inventory (Optional)'}</label>
                   <select 
                     className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
                     value={formData.product_id || ''}
@@ -482,7 +484,7 @@ export default function LaundryPage() {
                       });
                     }}
                   >
-                    <option value="">-- Manual Item (No Link) --</option>
+                    <option value="">{language === 'id' ? '-- Item Manual (Tanpa Tautan) --' : '-- Manual Item (No Link) --'}</option>
                     {inventoryProducts
                       .filter(p => p.category?.toLowerCase() === 'towel')
                       .map(p => (
@@ -492,7 +494,7 @@ export default function LaundryPage() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Target Item Name</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">{language === 'id' ? 'Nama Barang Target' : 'Target Item Name'}</label>
                   <input 
                     required
                     placeholder="e.g. Bed Sheets XL"
@@ -504,7 +506,7 @@ export default function LaundryPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Quantity</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">{t.common.quantity}</label>
                     <div className="relative">
                       <input 
                         type="number"
@@ -522,7 +524,7 @@ export default function LaundryPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Unit Cost (Rp)</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">{t.common.unitCost} (Rp)</label>
                     <input 
                       type="number"
                       required
@@ -535,9 +537,9 @@ export default function LaundryPage() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Manifest Notes</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">{language === 'id' ? 'Catatan Manifes' : 'Manifest Notes'}</label>
                   <textarea 
-                    placeholder="Reference vendor or specific instructions..."
+                    placeholder={language === 'id' ? 'Referensi vendor atau instruksi khusus...' : 'Reference vendor or specific instructions...'}
                     className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors min-h-[100px] resize-none"
                     value={formData.note}
                     onChange={(e) => setFormData({ ...formData, note: e.target.value })}
@@ -550,13 +552,13 @@ export default function LaundryPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="flex-1 px-6 py-4 bg-slate-950 hover:bg-slate-900 border border-white/5 text-slate-400 rounded-2xl font-bold text-xs transition-all tracking-widest uppercase"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                   <button 
                     type="submit"
                     className="flex-1 px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20 tracking-widest uppercase"
                   >
-                    Confirm Dispatch
+                    {t.laundry.confirmDispatch}
                   </button>
                 </div>
               </form>
@@ -585,25 +587,25 @@ export default function LaundryPage() {
               <div className="p-8 border-b border-white/5 bg-white/[0.02]">
                 <h3 className="text-xl font-black text-white italic uppercase flex items-center gap-3">
                   <ArrowDownLeft className="text-emerald-400" size={24} />
-                  Record <span className="text-emerald-500">Return</span>
+                  {t.laundry.recordReturn.split(' ')[0]} <span className="text-emerald-500">{t.laundry.recordReturn.split(' ')[1]}</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Mark items as received back in store</p>
+                <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">{language === 'id' ? 'Tandai barang sebagai diterima kembali di gudang' : 'Mark items as received back in store'}</p>
               </div>
 
               <form onSubmit={handleReturn} className="p-8 space-y-6">
                 <div className="p-4 bg-slate-950 border border-white/5 rounded-2xl">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Original Dispatch</span>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === 'id' ? 'Pengiriman Awal' : 'Original Dispatch'}</span>
                     <span className="text-xs font-mono font-bold text-white">{selectedRecord.quantity_out} units</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Already Returned</span>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === 'id' ? 'Sudah Kembali' : 'Already Returned'}</span>
                     <span className="text-xs font-mono font-bold text-indigo-400">{selectedRecord.quantity_in} units</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Return Quantity</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">{language === 'id' ? 'Jumlah Kembali' : 'Return Quantity'}</label>
                   <input 
                     type="number"
                     required
@@ -614,7 +616,7 @@ export default function LaundryPage() {
                     onChange={(e) => setReturnQuantity(parseInt(e.target.value))}
                   />
                   <p className="text-center text-[10px] text-slate-600 mt-2 font-bold uppercase tracking-widest italic">
-                    Remaining to return: {selectedRecord.quantity_out - selectedRecord.quantity_in} units
+                    {language === 'id' ? `Sisa untuk dikembalikan: ${selectedRecord.quantity_out - selectedRecord.quantity_in} unit` : `Remaining to return: ${selectedRecord.quantity_out - selectedRecord.quantity_in} units`}
                   </p>
                 </div>
 
@@ -624,13 +626,13 @@ export default function LaundryPage() {
                     onClick={() => setIsReturnModalOpen(false)}
                     className="flex-1 px-6 py-4 bg-slate-950 hover:bg-slate-900 border border-white/5 text-slate-400 rounded-2xl font-bold text-xs transition-all tracking-widest uppercase"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                   <button 
                     type="submit"
                     className="flex-1 px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs transition-all shadow-lg shadow-emerald-500/20 tracking-widest uppercase"
                   >
-                    Finalize Return
+                    {t.laundry.finalizeReturn}
                   </button>
                 </div>
               </form>
@@ -660,6 +662,7 @@ function StatCard({ icon: Icon, label, value, color, bgColor }: any) {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useLanguage();
   const styles = {
     out: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     partial: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -675,7 +678,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black tracking-widest uppercase ${styles[status as keyof typeof styles]}`}>
       {icons[status as keyof typeof icons]}
-      {status}
+      {status === 'returned' ? t.laundry.returned : status === 'partial' ? t.laundry.pending : t.laundry.pending}
     </div>
   );
 }
