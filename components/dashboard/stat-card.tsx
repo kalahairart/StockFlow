@@ -28,7 +28,7 @@ export default function StatCard({ title, value, icon: Icon, color, trend }: Sta
           </p>
         </div>
         <div className={`p-3 sm:p-4 rounded-2xl bg-opacity-10 ${color} border border-white/5 shadow-inner`}>
-          <Icon className={`${color.replace('bg-', 'text-')} group-hover:scale-110 transition-transform duration-300`} size={20} />
+          <Icon className={`${color.replace('bg-', 'text-')} opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300`} size={20} />
         </div>
       </div>
       
