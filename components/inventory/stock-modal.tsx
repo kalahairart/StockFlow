@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '@/hooks/use-language';
 import { X, ArrowUpCircle, ArrowDownCircle, Package, Info, DollarSign } from 'lucide-react';
 import { Product } from '@/types/inventory';
 import { useForm } from 'react-hook-form';
@@ -26,6 +27,7 @@ interface StockModalProps {
 }
 
 export default function StockModal({ products, isOpen, onClose, onSubmit }: StockModalProps) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const { register, handleSubmit, formState: { errors }, watch, reset, setValue } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -94,7 +96,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                   {transactionType === 'in' ? <ArrowUpCircle size={24} className="sm:w-8 sm:h-8" /> : <ArrowDownCircle size={24} className="sm:w-8 sm:h-8" />}
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Record Transaction</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{t.common.stockUpdate}</h2>
                   <p className="text-slate-500 text-[9px] sm:text-xs font-bold uppercase tracking-widest mt-1">Inventory Mesh Update</p>
                 </div>
               </div>
@@ -115,7 +117,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                         : 'border-white/5 bg-white/5 text-slate-500 hover:border-white/10'
                     }`}>
                       <ArrowUpCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
-                      <span className="font-bold text-xs sm:text-sm tracking-tight">Stock In</span>
+                      <span className="font-bold text-xs sm:text-sm tracking-tight">{t.common.stockIn}</span>
                     </div>
                   </label>
                   <label className="relative cursor-pointer group">
@@ -131,21 +133,21 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                         : 'border-white/5 bg-white/5 text-slate-500 hover:border-white/10'
                     }`}>
                       <ArrowDownCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
-                      <span className="font-bold text-xs sm:text-sm tracking-tight">Stock Out</span>
+                      <span className="font-bold text-xs sm:text-sm tracking-tight">{t.common.stockOut}</span>
                     </div>
                   </label>
                 </div>
 
                 {/* Product Selection */}
                 <div className="space-y-2 sm:space-y-3">
-                  <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Component Identifier</label>
+                  <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.identifier}</label>
                   <div className="relative">
                     <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <select
                       {...register('product_id')}
                       className="w-full bg-slate-950 border border-white/5 rounded-2xl pl-12 pr-10 py-3 sm:py-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none cursor-pointer hover:border-white/10 transition-colors shadow-inner"
                     >
-                      <option value="">Select SKU...</option>
+                      <option value="">{t.common.selectSku}</option>
                       {products.map(p => (
                         <option key={p.id} value={p.id} className="bg-slate-900">{p.name} [{p.stock_quantity}]</option>
                       ))}
@@ -160,7 +162,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
                     {/* Quantity */}
                     <div className="xs:col-span-1 space-y-2 sm:space-y-3">
-                        <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Units</label>
+                        <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.units}</label>
                         <input
                             type="number"
                             {...register('quantity', { valueAsNumber: true })}
@@ -173,7 +175,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                     {/* Unit Cost - Only for 'in' transactions */}
                     {transactionType === 'in' && (
                       <div className="xs:col-span-1 space-y-2 sm:space-y-3">
-                          <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Unit Cost</label>
+                          <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.unitCost}</label>
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
                             <input
@@ -190,7 +192,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
 
                     {/* Note */}
                     <div className={`${transactionType === 'in' ? 'xs:col-span-2 sm:col-span-1' : 'xs:col-span-2 sm:col-span-2'} space-y-2 sm:space-y-3`}>
-                        <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Reference Tag</label>
+                        <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.referenceTag}</label>
                         <div className="relative">
                             <Info className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                             <input
@@ -208,7 +210,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                     onClick={onClose}
                     className="order-2 sm:order-1 flex-1 px-6 py-3 sm:py-4 rounded-2xl font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm uppercase tracking-widest"
                   >
-                    Abort
+                    {t.common.abort}
                   </button>
                   <button
                     disabled={isLoading}
@@ -218,7 +220,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                         : 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/40'
                     } disabled:opacity-50 active:scale-95`}
                   >
-                    {isLoading ? 'SYNCING...' : 'CONFIRM OPS'}
+                    {isLoading ? t.common.syncing.toUpperCase() : t.common.confirmOps.toUpperCase()}
                   </button>
                 </div>
               </form>
