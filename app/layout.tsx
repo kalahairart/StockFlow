@@ -4,6 +4,7 @@ import AppLayout from '@/components/layout';
 import { AuthProvider } from '@/hooks/use-auth';
 import { AuthGuard } from '@/components/auth-guard';
 import { Toaster } from 'sonner';
+import { LanguageProvider } from '@/hooks/use-language';
 
 export const metadata: Metadata = {
   title: 'StockFlow Obsidian 1',
@@ -19,11 +20,13 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body suppressHydrationWarning>
         <Toaster position="top-right" theme="dark" closeButton richColors />
-        <AuthProvider>
-          <AuthGuard>
-            <AppLayout>{children}</AppLayout>
-          </AuthGuard>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AuthGuard>
+              <AppLayout>{children}</AppLayout>
+            </AuthGuard>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
