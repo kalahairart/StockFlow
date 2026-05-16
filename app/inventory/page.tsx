@@ -9,10 +9,13 @@ import { Product } from '@/types/inventory';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/hooks/use-auth';
+import { sendTelegramNotification, formatStockAlert } from '@/lib/notifications';
 import { toast } from 'sonner';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function InventoryPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -148,6 +151,17 @@ export default function InventoryPage() {
         .single();
       
       if (!productError && updatedProduct) {
+        // Telegram notification for critical/empty stock level
+        if (updatedProduct.stock_quantity <= updatedProduct.min_stock) {
+          const notificationMessage = formatStockAlert(
+            updatedProduct.name,
+            updatedProduct.stock_quantity,
+            updatedProduct.category,
+            updatedProduct.min_stock
+          );
+          sendTelegramNotification(notificationMessage);
+        }
+
         if (updatedProduct.stock_quantity <= updatedProduct.min_stock) {
            toast.error(`Critical Stock: ${updatedProduct.name}`, {
              description: `Stock level fell to ${updatedProduct.stock_quantity}. threshold: ${updatedProduct.min_stock}`,
@@ -203,7 +217,7 @@ export default function InventoryPage() {
             <div className="h-1 w-1 bg-slate-700 rounded-full" />
             <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">{products.length} Units Active</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Inventory Registry</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t.inventory.title}</h1>
         </div>
         
         <div className="flex items-center gap-2 sm:gap-3">
@@ -218,16 +232,16 @@ export default function InventoryPage() {
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 text-slate-300 text-[10px] sm:text-xs font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
           >
             <Plus size={16} />
-            <span className="hidden xs:inline">REGISTER SKU</span>
-            <span className="xs:hidden">NEW</span>
+            <span className="hidden xs:inline">{t.common.registerSku.toUpperCase()}</span>
+            <span className="xs:hidden">{t.common.initiateItem}</span>
           </button>
           <button 
             onClick={() => setIsStockModalOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] sm:text-xs font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl transition-all shadow-xl shadow-indigo-900/40 active:scale-95 whitespace-nowrap"
           >
             <Plus size={16} />
-            <span className="hidden xs:inline">COMMIT STOCK</span>
-            <span className="xs:hidden">UPDATE</span>
+            <span className="hidden xs:inline">{t.common.stockUpdate.toUpperCase()}</span>
+            <span className="xs:hidden">{t.common.updateItem}</span>
           </button>
         </div>
       </div>
@@ -238,7 +252,7 @@ export default function InventoryPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
           <input 
             type="text" 
-            placeholder="Search by SKU name or identifier..."
+            placeholder={t.common.search}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-slate-950 border border-white/5 rounded-2xl pl-12 pr-5 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -261,13 +275,13 @@ export default function InventoryPage() {
                 onClick={() => setViewMode('table')}
                 className={`px-4 py-2 rounded-xl text-[10px] font-bold transition-all ${viewMode === 'table' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
             >
-                TABLE
+                {t.inventory.table.toUpperCase()}
             </button>
             <button 
                 onClick={() => setViewMode('grid')}
                 className={`px-4 py-2 rounded-xl text-[10px] font-bold transition-all ${viewMode === 'grid' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-500 hover:text-slate-300'}`}
             >
-                GRID
+                {t.inventory.grid.toUpperCase()}
             </button>
         </div>
       </div>
@@ -282,13 +296,13 @@ export default function InventoryPage() {
         ) : filteredProducts.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center p-20 text-center bg-[#111114]/30 rounded-3xl border border-dashed border-white/5">
                 <Package size={48} className="text-slate-700 mb-4" />
-                <h3 className="text-xl font-bold text-slate-300">No assets detected</h3>
-                <p className="text-slate-500 text-sm mt-2 max-w-sm">No items found matching your current filter criteria or the inventory is empty.</p>
+                <h3 className="text-xl font-bold text-slate-300">{t.inventory.noProducts}</h3>
+                <p className="text-slate-500 text-sm mt-2 max-w-sm">{t.inventory.noResultsDesc}</p>
                 <button 
                   onClick={() => {setSearchQuery(''); setCategoryFilter('all');}}
                   className="mt-6 text-indigo-400 text-xs font-bold uppercase tracking-widest hover:text-indigo-300 bg-indigo-500/5 px-4 py-2 rounded-lg"
                 >
-                  Clear All Filters
+                  {t.common.clearFilters}
                 </button>
             </div>
         ) : (
