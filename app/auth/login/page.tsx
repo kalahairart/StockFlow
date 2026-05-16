@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Lock, Mail, LogIn, ArrowRight, ShieldCheck, Terminal } from 'lucide-react';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,7 @@ export default function LoginPage() {
           <div className="inline-flex p-4 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-6 shadow-xl shadow-indigo-500/10">
             <Terminal size={10} />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Login Page</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">{t.auth.loginTitle}</h1>
           <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">StockFlow</p>
         </div>
 
@@ -92,9 +94,9 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-900/40 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {loading ? 'Validating...' : (
+              {loading ? t.auth.validating : (
                 <>
-                  Login
+                  {t.auth.establishSession}
                   <ArrowRight size={16} />
                 </>
               )}
@@ -103,9 +105,9 @@ export default function LoginPage() {
 
           <div className="mt-8 pt-8 border-t border-white/5 text-center">
             <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-              No identity vector yet?{' '}
+              {t.auth.noAccount}{' '}
               <Link href="/auth/register" prefetch={false} className="text-indigo-400 hover:text-indigo-300 ml-1">
-                Initialize Account
+                {t.auth.initializeAccount}
               </Link>
             </p>
           </div>
