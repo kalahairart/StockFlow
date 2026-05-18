@@ -93,6 +93,7 @@ export default function LaundryPage() {
         .from('laundry_records')
         .insert([{
           ...formData,
+          sent_at: new Date().toISOString(),
           total_cost: totalCost,
           status: 'out',
           operator_name: operatorName
@@ -126,7 +127,13 @@ export default function LaundryPage() {
       }
       
       setIsModalOpen(false);
-      setFormData({ item_name: '', product_id: null, quantity_out: 0, unit_cost: 0, note: '' });
+      setFormData({ 
+        item_name: '', 
+        product_id: null, 
+        quantity_out: 0, 
+        unit_cost: 0, 
+        note: ''
+      });
       await fetchRecords();
     } catch (err) {
       alert('Failed to register laundry: ' + (err as Error).message);
@@ -150,7 +157,7 @@ export default function LaundryPage() {
         .update({
           quantity_in: newQuantityIn,
           status: newStatus,
-          returned_at: newStatus === 'returned' ? new Date().toISOString() : null
+          returned_at: newStatus === 'returned' || newQuantityIn > selectedRecord.quantity_in ? new Date().toISOString() : selectedRecord.returned_at
         })
         .eq('id', selectedRecord.id);
 
@@ -366,14 +373,26 @@ export default function LaundryPage() {
                           </td>
                           <td className="p-4 sm:p-6 hidden sm:table-cell">
                             <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
-                                <ArrowUpRight size={10} className="text-rose-500" />
-                                {new Date(record.sent_at).toLocaleDateString()}
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                                  <ArrowUpRight size={10} className="text-rose-500" />
+                                  {new Date(record.sent_at).toLocaleDateString()}
+                                </div>
+                                <div className="flex items-center gap-2 text-[9px] font-medium text-slate-600 pl-4">
+                                  <Clock size={8} />
+                                  {new Date(record.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
                               </div>
                               {record.returned_at && (
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
-                                  <ArrowDownLeft size={10} className="text-emerald-500" />
-                                  {new Date(record.returned_at).toLocaleDateString()}
+                                <div className="flex flex-col gap-0.5 mt-2">
+                                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                                    <ArrowDownLeft size={10} className="text-emerald-500" />
+                                    {new Date(record.returned_at).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[9px] font-medium text-slate-600 pl-4">
+                                    <Clock size={8} />
+                                    {new Date(record.returned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -604,19 +623,23 @@ export default function LaundryPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">{language === 'id' ? 'Jumlah Kembali' : 'Return Quantity'}</label>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 text-center">
+                    {language === 'id' ? 'Jumlah Kembali' : 'Return Quantity'}
+                  </label>
                   <input 
                     type="number"
                     required
                     min="1"
                     max={selectedRecord.quantity_out - selectedRecord.quantity_in}
-                    className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors text-center text-2xl font-mono"
+                    className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-colors text-center text-3xl font-mono"
                     value={returnQuantity || ''}
                     onChange={(e) => setReturnQuantity(parseInt(e.target.value))}
                   />
-                  <p className="text-center text-[10px] text-slate-600 mt-2 font-bold uppercase tracking-widest italic">
-                    {language === 'id' ? `Sisa untuk dikembalikan: ${selectedRecord.quantity_out - selectedRecord.quantity_in} unit` : `Remaining to return: ${selectedRecord.quantity_out - selectedRecord.quantity_in} units`}
+                  <p className="text-center text-[10px] text-slate-600 font-bold uppercase tracking-widest italic">
+                    {language === 'id' 
+                      ? `Sisa untuk dikembalikan: ${selectedRecord.quantity_out - selectedRecord.quantity_in} unit` 
+                      : `Remaining to return: ${selectedRecord.quantity_out - selectedRecord.quantity_in} units`}
                   </p>
                 </div>
 
