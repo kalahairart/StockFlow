@@ -67,9 +67,9 @@ export const translations = {
       stockOverTime: 'Tren Aliran Stok (30 Hari)',
       laundryActivity: 'Aktivitas Laundry Terbaru',
       operationalMetrics: 'Metrik Operasional',
-      logisticsThroughput: 'Throughput Logistik',
+      logisticsThroughput: 'Kapasitas Logistik',
       withdrawalLog: 'Log Pengambilan (30H)',
-      inventoryMesh: 'Jaring Inventaris Real-time',
+      inventoryMesh: 'Real-time Inventaris',
     },
     inventory: {
       title: 'Manajemen Inventaris',
@@ -100,10 +100,10 @@ export const translations = {
       initiateDispatch: 'Mulai Pengiriman',
       recordReturn: 'Catat Pengembalian',
       confirmDispatch: 'Konfirmasi Pengiriman',
-      finalizeReturn: 'Finalisasi Pengembalian',
+      finalizeReturn: 'Pengembalian Terakhir',
     },
     transactions: {
-      title: 'Audit Trail Transaksi',
+      title: 'Jejak Audit Transaksi',
       subtitle: 'Rekam jejak lengkap pergerakan barang.',
       exportLedger: 'Ekspor Buku Besar',
       weeklySummary: 'Ringkasan Mingguan',
@@ -128,7 +128,7 @@ export const translations = {
       inventoryDesc: 'Kelola ribuan SKU dengan mudah menggunakan sistem tabel dan grid kami yang fleksibel.',
       laundryTitle: 'Operasional Laundry',
       laundryDesc: 'Fitur khusus untuk melacak linen atau alat yang perlu dibersihkan secara reguler.',
-      transTitle: 'Audit Trail & Transaksi',
+      transTitle: 'Jejak Audit & Transaksi',
       transDesc: 'Transparansi total untuk setiap pergerakan barang dalam inventaris Anda.',
       proTips: 'Pro Tips Efisiensi',
       footer: 'Butuh bantuan lebih lanjut? Hubungi Super Admin sistem.'
