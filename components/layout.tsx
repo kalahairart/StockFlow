@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages, Users, Activity } from 'lucide-react';
+import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages, Users, Activity, ClipboardList } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -62,6 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={Box} label={t.common.inventory} href="/inventory" active={pathname === '/inventory'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={ClipboardList} label={t.common.restockRequests} href="/restock-requests" active={pathname === '/restock-requests'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
           {isAdmin && (
@@ -115,6 +116,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={Box} label={t.common.inventory} href="/inventory" active={pathname === '/inventory'} />
           <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} />
           <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} />
+          <NavItem icon={ClipboardList} label={t.common.restockRequests} href="/restock-requests" active={pathname === '/restock-requests'} />
           <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} />
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} />
           {isAdmin && (
