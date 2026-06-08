@@ -5,6 +5,7 @@ import { MoreHorizontal, AlertTriangle, ChevronLeft, ChevronRight, Package, Shie
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 interface InventoryTableProps {
   products: Product[];
@@ -48,6 +49,7 @@ function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
 }
 
 export default function InventoryTable({ products, onDelete, viewMode = 'table' }: InventoryTableProps) {
+  const { isAdmin } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,7 +105,7 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
                     <div className={`p-3 rounded-2xl border ${isCritical ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-slate-800/40 border-white/5 text-slate-400'}`}>
                       <Package size={20} />
                     </div>
-                    <DeleteButton onConfirm={() => onDelete?.(product.id)} />
+                    {isAdmin && <DeleteButton onConfirm={() => onDelete?.(product.id)} />}
                   </div>
 
                   <div>
@@ -282,7 +284,7 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
                           <span className="hidden xs:inline">DETAILS</span>
                           <ExternalLink size={10} />
                         </Link>
-                        <DeleteButton onConfirm={() => onDelete?.(product.id)} />
+                        {isAdmin && <DeleteButton onConfirm={() => onDelete?.(product.id)} />}
                       </div>
                     </td>
                   </motion.tr>
