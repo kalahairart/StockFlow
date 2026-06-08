@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/hooks/use-language';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t } = useLanguage();
   const [currentTime, setCurrentTime] = useState<string>('');
   const [products, setProducts] = useState<Product[]>([]);
@@ -182,7 +182,13 @@ export default function DashboardPage() {
             updatedProduct.category,
             updatedProduct.min_stock
           );
-          sendTelegramNotification(notificationMessage);
+          sendTelegramNotification(notificationMessage).then(success => {
+            if (!success) {
+              toast.error('Telegram Error', {
+                description: 'Gagal mengirim notifikasi ke bot. Periksa konfigurasi API Token Anda.'
+              });
+            }
+          });
         }
 
         if (updatedProduct.stock_quantity <= updatedProduct.min_stock) {
@@ -270,6 +276,12 @@ export default function DashboardPage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
+    if (!isAdmin) {
+      toast.error('Akses Ditolak', {
+        description: 'Hanya administrator yang memiliki wewenang untuk menghapus produk.',
+      });
+      return;
+    }
     try {
       // First delete associated transactions
       const { error: transError } = await supabase
