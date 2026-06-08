@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages } from 'lucide-react';
+import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages, Users, Activity } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ import { useLanguage } from '@/hooks/use-language';
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
 
@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
-  const userRole = user?.email?.includes('admin') ? 'Super Admin' : 'Gym Attendance';
+  const userRole = isAdmin ? 'Super Admin' : 'Gym Attendance';
 
   return (
     <div className="flex h-screen bg-[#0A0A0C] text-slate-300 font-sans overflow-hidden">
@@ -64,6 +64,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
+          {isAdmin && (
+            <>
+              <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} onClick={() => setIsMobileMenuOpen(false)} />
+            </>
+          )}
         </nav>
 
                 <div className="pt-6 border-t border-white/5">
@@ -111,6 +117,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} />
           <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} />
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} />
+          {isAdmin && (
+            <>
+              <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} />
+              <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} />
+            </>
+          )}
         </nav>
         
         <div className="p-6 border-t border-slate-900">
