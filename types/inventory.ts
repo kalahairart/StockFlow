@@ -43,3 +43,18 @@ export interface LaundryRecord {
   note: string | null;
   created_at: string;
 }
+
+export interface RestockRequest {
+  id: string;
+  item_name: string;
+  product_id: string | null;
+  quantity: number;
+  requested_by: string;
+  user_id: string | null;
+  status: 'pending' | 'processing' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+  products?: Product | null;
+}
+
