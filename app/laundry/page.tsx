@@ -27,7 +27,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/hooks/use-language';
 
 export default function LaundryPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t, language } = useLanguage();
   const [records, setRecords] = useState<LaundryRecord[]>([]);
   const [inventoryProducts, setInventoryProducts] = useState<Product[]>([]);
@@ -198,6 +198,12 @@ export default function LaundryPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!isAdmin) {
+      toast.error('Akses Ditolak', {
+        description: 'Hanya administrator yang memiliki wewenang untuk menghapus log laundry.',
+      });
+      return;
+    }
     if (!confirm('Permanent Deletion: This record will be removed from the audit trail. Proceed?')) return;
     try {
       const { error } = await supabase
@@ -410,12 +416,14 @@ export default function LaundryPage() {
                                   <ArrowDownLeft size={16} />
                                 </button>
                               )}
-                              <button 
-                                onClick={() => handleDelete(record.id)}
-                                className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {isAdmin && (
+                                <button 
+                                  onClick={() => handleDelete(record.id)}
+                                  className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </motion.tr>
