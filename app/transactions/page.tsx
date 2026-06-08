@@ -7,9 +7,11 @@ import { History, ArrowUpCircle, ArrowDownCircle, Search, Calendar, FileText, Pa
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import { useLanguage } from '@/hooks/use-language';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function TransactionsPage() {
   const { t } = useLanguage();
+  const { isAdmin } = useAuth();
   const [transactions, setTransactions] = useState<(Transaction & { products: Product })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,6 +93,10 @@ export default function TransactionsPage() {
   };
 
   const handleDeleteTransaction = async (id: string) => {
+    if (!isAdmin) {
+      alert('Forbidden: Hanya administrator yang dapat menghapus transaksi.');
+      return;
+    }
     if (!confirm('Permanent Deletion: This transaction log will be removed from the audit trail and stock will be reverted. Proceed?')) return;
     
     try {
@@ -286,12 +292,14 @@ export default function TransactionsPage() {
                         </p>
                       </td>
                       <td className="p-4 sm:p-6 text-right">
-                        <button 
-                          onClick={() => handleDeleteTransaction(tx.id)}
-                          className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => handleDeleteTransaction(tx.id)}
+                            className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </td>
                     </motion.tr>
                   );
