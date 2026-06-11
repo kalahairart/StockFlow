@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages, Users, Activity, ClipboardList } from 'lucide-react';
+import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages, Users, Activity, ClipboardList, FileSpreadsheet } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -57,7 +57,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <CloseIcon size={24} />
                 </button>
               </div>
-                <nav className="flex-1 space-y-2">
+                <nav className="flex-1 space-y-2 overflow-y-auto pr-1">
           <NavItem icon={LayoutDashboard} label={t.common.dashboard} href="/" active={pathname === '/'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={Box} label={t.common.inventory} href="/inventory" active={pathname === '/inventory'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} onClick={() => setIsMobileMenuOpen(false)} />
@@ -69,6 +69,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <>
               <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} onClick={() => setIsMobileMenuOpen(false)} />
               <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} onClick={() => setIsMobileMenuOpen(false)} />
+              <NavItem icon={FileSpreadsheet} label={t.common.logReport} href="/admin/log-report" active={pathname === '/admin/log-report'} onClick={() => setIsMobileMenuOpen(false)} />
             </>
           )}
         </nav>
@@ -111,7 +112,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
         
-        <nav className="flex-1 px-4 py-8 space-y-1">
+        <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto pr-1">
           <NavItem icon={LayoutDashboard} label={t.common.dashboard} href="/" active={pathname === '/'} />
           <NavItem icon={Box} label={t.common.inventory} href="/inventory" active={pathname === '/inventory'} />
           <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} />
@@ -123,6 +124,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <>
               <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} />
               <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} />
+              <NavItem icon={FileSpreadsheet} label={t.common.logReport} href="/admin/log-report" active={pathname === '/admin/log-report'} />
             </>
           )}
         </nav>
