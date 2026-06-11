@@ -46,13 +46,16 @@ export default function DashboardPage() {
       if (productsError) throw productsError;
       setProducts(productsData || []);
 
+      const now = new Date();
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const queryStartDate = thirtyDaysAgo < startOfCurrentMonth ? thirtyDaysAgo : startOfCurrentMonth;
       
       const { data: transData, error: transError } = await supabase
         .from('transactions')
         .select('*, products(*)')
-        .gte('timestamp', thirtyDaysAgo.toISOString())
+        .gte('timestamp', queryStartDate.toISOString())
         .order('timestamp', { ascending: true });
 
       if (transError) throw transError;
@@ -72,9 +75,16 @@ export default function DashboardPage() {
     // Asset Valuation: Current stock * unit cost
     const totalValuation = products.reduce((acc, p) => acc + (p.stock_quantity * (p.unit_cost || 0)), 0);
     
-    // Monthly Outflow: sum of quantity for 'out' transactions in last 30 days
+    // Monthly Outflow: sum of quantity for 'out' transactions in current calendar month
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
     const monthlyOutflow = transactions
-      .filter(t => t.type === 'out')
+      .filter(t => {
+        const txDate = new Date(t.timestamp);
+        return t.type === 'out' && 
+               txDate.getMonth() === currentMonth && 
+               txDate.getFullYear() === currentYear;
+      })
       .reduce((acc, t) => acc + t.quantity, 0);
     
     return {
@@ -87,14 +97,23 @@ export default function DashboardPage() {
 
   const itemizedWithdrawal = useMemo(() => {
     const withdrawalMap: Record<string, { name: string, quantity: number }> = {};
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
     
-    transactions.filter(t => t.type === 'out').forEach(t => {
-      const productName = (t as any).products?.name || 'Deleted Product';
-      if (!withdrawalMap[t.product_id]) {
-        withdrawalMap[t.product_id] = { name: productName, quantity: 0 };
-      }
-      withdrawalMap[t.product_id].quantity += t.quantity;
-    });
+    transactions
+      .filter(t => {
+        const txDate = new Date(t.timestamp);
+        return t.type === 'out' && 
+               txDate.getMonth() === currentMonth && 
+               txDate.getFullYear() === currentYear;
+      })
+      .forEach(t => {
+        const productName = (t as any).products?.name || 'Deleted Product';
+        if (!withdrawalMap[t.product_id]) {
+          withdrawalMap[t.product_id] = { name: productName, quantity: 0 };
+        }
+        withdrawalMap[t.product_id].quantity += t.quantity;
+      });
 
     return Object.entries(withdrawalMap)
       .map(([id, data]) => ({ id, ...data }))
@@ -518,7 +537,7 @@ export default function DashboardPage() {
                 {t.common.createdBy} <span className="text-white">Candra</span>
             </p>
             <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
-                Obsidian v2.4.0 • Logistix Mesh Control
+                Obsidian v2.4.0 • Sistem gudang
             </p>
         </div>
       </footer>
