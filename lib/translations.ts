@@ -11,6 +11,7 @@ export const translations = {
       settings: 'Pengaturan Sistem',
       userList: 'Daftar User',
       outgoingActivity: 'Aktivitas Pengeluaran',
+      logReport: 'Laporan Log',
       restockRequests: 'Permintaan Restock',
       logout: 'Keluar',
       search: 'Cari SKU atau nama...',
@@ -71,7 +72,7 @@ export const translations = {
       laundryActivity: 'Aktivitas Laundry Terbaru',
       operationalMetrics: 'Metrik Operasional',
       logisticsThroughput: 'Throughput Logistik',
-      withdrawalLog: 'Log Pengambilan (30H)',
+      withdrawalLog: 'Log Pengambilan (Bulan Ini)',
       inventoryMesh: 'Jaring Inventaris Real-time',
     },
     inventory: {
@@ -196,6 +197,7 @@ export const translations = {
       settings: 'System Config',
       userList: 'User List',
       outgoingActivity: 'Dispatch Activity',
+      logReport: 'Log Report',
       restockRequests: 'Restock Requests',
       logout: 'Log Out',
       search: 'Search SKU or name...',
@@ -256,7 +258,7 @@ export const translations = {
       laundryActivity: 'Recent Laundry Activity',
       operationalMetrics: 'Operational Metrics',
       logisticsThroughput: 'Logistics Throughput',
-      withdrawalLog: 'Withdrawal Log (30D)',
+      withdrawalLog: 'Withdrawal Log (Current Month)',
       inventoryMesh: 'Real-time Inventory Mesh',
     },
     inventory: {
