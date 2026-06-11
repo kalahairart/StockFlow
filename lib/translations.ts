@@ -117,7 +117,7 @@ export const translations = {
       operator: 'Operator',
       id: 'ID',
       receive: 'TERIMA',
-      dispatch: 'KIRIM',
+      dispatch: 'KELUAR',
       previous: 'SEBELUMNYA',
       next: 'BERIKUTNYA',
       noLogs: 'Tidak ada log riwayat ditemukan',
