@@ -24,6 +24,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/hooks/use-auth';
 import { useLanguage } from '@/hooks/use-language';
 import { toast } from 'sonner';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Cell 
+} from 'recharts';
 
 export default function LogReportPage() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -31,37 +41,82 @@ export default function LogReportPage() {
   const [transactions, setTransactions] = useState<(Transaction & { products: Product })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Current calendar month states
-  const currentMonthDateObj = new Date();
-  const currentMonthNum = currentMonthDateObj.getMonth(); // 0-based
-  const currentYearNum = currentMonthDateObj.getFullYear();
+  const currentMonthDateObj = useMemo(() => new Date(), []);
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonthDateObj.getMonth()); // 0-based
+  const [selectedYear, setSelectedYear] = useState<number>(currentMonthDateObj.getFullYear());
+  const [periods, setPeriods] = useState<{ month: number; year: number }[]>([]);
 
-  const monthNamesID = [
+  const monthNamesID = useMemo(() => [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
+  ], []);
   
-  const monthNamesEN = [
+  const monthNamesEN = useMemo(() => [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  ], []);
 
-  const currentMonthName = language === 'id' 
-    ? `${monthNamesID[currentMonthNum]} ${currentYearNum}` 
-    : `${monthNamesEN[currentMonthNum]} ${currentYearNum}`;
+  const currentMonthName = useMemo(() => {
+    return language === 'id' 
+      ? `${monthNamesID[selectedMonth]} ${selectedYear}` 
+      : `${monthNamesEN[selectedMonth]} ${selectedYear}`;
+  }, [selectedMonth, selectedYear, language, monthNamesID, monthNamesEN]);
+
+  const fetchAvailablePeriods = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('timestamp')
+        .eq('type', 'out');
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const periodsMap = new Map<string, { month: number; year: number }>();
+        
+        data.forEach(item => {
+          if (!item.timestamp) return;
+          const d = new Date(item.timestamp);
+          if (isNaN(d.getTime())) return;
+          const m = d.getMonth();
+          const y = d.getFullYear();
+          const key = `${y}-${m}`;
+          periodsMap.set(key, { month: m, year: y });
+        });
+
+        const sorted = Array.from(periodsMap.values()).sort((a, b) => {
+          if (a.year !== b.year) return b.year - a.year;
+          return b.month - a.month;
+        });
+
+        setPeriods(sorted);
+      } else {
+        setPeriods([{ month: currentMonthDateObj.getMonth(), year: currentMonthDateObj.getFullYear() }]);
+      }
+    } catch (err) {
+      console.error('Error fetching available periods:', err);
+    }
+  }, [currentMonthDateObj]);
 
   const fetchCurrentMonthTransactions = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Calculate start of current month date block
-      const startOfMonth = new Date(currentYearNum, currentMonthNum, 1);
+      const startOfPeriod = new Date(selectedYear, selectedMonth, 1);
+      const endOfPeriod = new Date(selectedYear, selectedMonth + 1, 1);
       
       const { data, error } = await supabase
         .from('transactions')
         .select('*, products(*)')
         .eq('type', 'out')
-        .gte('timestamp', startOfMonth.toISOString())
+        .gte('timestamp', startOfPeriod.toISOString())
+        .lt('timestamp', endOfPeriod.toISOString())
         .order('timestamp', { ascending: false });
 
       if (error) throw error;
@@ -72,13 +127,38 @@ export default function LogReportPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentYearNum, currentMonthNum, language]);
+  }, [selectedYear, selectedMonth, language]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAvailablePeriods();
+    }
+  }, [isAdmin, fetchAvailablePeriods]);
 
   useEffect(() => {
     if (isAdmin) {
       fetchCurrentMonthTransactions();
     }
   }, [isAdmin, fetchCurrentMonthTransactions]);
+
+  const periodOptions = useMemo(() => {
+    const list = periods.length > 0 ? periods : [{ month: currentMonthDateObj.getMonth(), year: currentMonthDateObj.getFullYear() }];
+    
+    const hasSelected = list.some(p => p.month === selectedMonth && p.year === selectedYear);
+    const finalPeriods = hasSelected ? list : [{ month: selectedMonth, year: selectedYear }, ...list];
+
+    return finalPeriods.map(p => {
+      const label = language === 'id' 
+        ? `${monthNamesID[p.month]} ${p.year}` 
+        : `${monthNamesEN[p.month]} ${p.year}`;
+      return {
+        month: p.month,
+        year: p.year,
+        label,
+        value: `${p.year}-${p.month}`
+      };
+    });
+  }, [periods, selectedMonth, selectedYear, language, monthNamesID, monthNamesEN, currentMonthDateObj]);
 
   // Filter local state based on search query
   const filteredTransactions = useMemo(() => {
@@ -115,6 +195,61 @@ export default function LogReportPage() {
     };
   }, [transactions, language]);
 
+  // Determine daily units dispatched trend for selected month/year
+  const chartData = useMemo(() => {
+    if (!selectedYear || selectedMonth === undefined) return [];
+    
+    // Get total number of days in selected month
+    const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    
+    const dailyMap = Array.from({ length: totalDays }, (_, index) => {
+      const dayNum = index + 1;
+      return {
+        dayLabel: String(dayNum),
+        fullDateLabel: language === 'id'
+          ? `${dayNum} ${monthNamesID[selectedMonth]} ${selectedYear}`
+          : `${monthNamesEN[selectedMonth]} ${dayNum}, ${selectedYear}`,
+        quantity: 0
+      };
+    });
+
+    transactions.forEach(t => {
+      if (!t.timestamp) return;
+      const d = new Date(t.timestamp);
+      if (isNaN(d.getTime())) return;
+
+      const tMonth = d.getMonth();
+      const tYear = d.getFullYear();
+
+      if (tMonth === selectedMonth && tYear === selectedYear) {
+        const tDay = d.getDate();
+        if (tDay >= 1 && tDay <= totalDays) {
+          dailyMap[tDay - 1].quantity += t.quantity || 0;
+        }
+      }
+    });
+
+    return dailyMap;
+  }, [transactions, selectedMonth, selectedYear, language, monthNamesID, monthNamesEN]);
+
+  // Custom chart tooltip renderer matching dark theme
+  const ChartTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-[#0f0f12] border border-white/10 p-3.5 rounded-2xl shadow-2xl">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
+            {data.fullDateLabel}
+          </p>
+          <p className="text-sm font-mono font-black text-[#6366f1] mt-1.5">
+            {payload[0].value.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} {language === 'id' ? 'Unit Keluar' : 'Units Out'}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   // Excel compliant export function
   const handleExportExcel = () => {
     if (filteredTransactions.length === 0) {
@@ -122,7 +257,7 @@ export default function LogReportPage() {
       return;
     }
 
-    // Set headers
+    // Set headers for transactions ledger
     const headers = [
       'Transaction ID',
       'SKU / Item Name',
@@ -162,11 +297,66 @@ export default function LogReportPage() {
       ];
     });
 
-    // We prepend \uFEFF to specify UTF-8 encoding for proper Excel import
-    const csvContent = "\uFEFF" + [
+    // Calculate aggregated item outflow totals
+    const itemSummaryMap = new Map<string, { category: string; totalQty: number; totalVal: number }>();
+    filteredTransactions.forEach(t => {
+      const pName = t.products?.name || 'Deleted Product';
+      const pCat = t.products?.category || 'General';
+      const uCost = t.unit_cost || t.products?.unit_cost || 0;
+      const tCost = t.quantity * uCost;
+
+      const existing = itemSummaryMap.get(pName);
+      if (existing) {
+        existing.totalQty += t.quantity;
+        existing.totalVal += tCost;
+      } else {
+        itemSummaryMap.set(pName, {
+          category: pCat,
+          totalQty: t.quantity,
+          totalVal: tCost
+        });
+      }
+    });
+
+    const summaryHeaders = [
+      language === 'id' ? 'Nama Item / Produk' : 'Item / Product Name',
+      language === 'id' ? 'Kategori' : 'Category',
+      language === 'id' ? 'Total Keluar' : 'Total Quantity Out',
+      language === 'id' ? 'Total Nilai (USD)' : 'Total Value (USD)'
+    ];
+
+    const summaryRows: string[][] = [];
+    itemSummaryMap.forEach((data, name) => {
+      summaryRows.push([
+        `"${name.replace(/"/g, '""')}"`,
+        `"${data.category.replace(/"/g, '""')}"`,
+        String(data.totalQty),
+        String(data.totalVal.toFixed(2))
+      ]);
+    });
+
+    // Create a beautifully split CSV layout
+    const summaryTitle = language === 'id' 
+      ? `RINGKASAN AKUMULASI PENGELUARAN BARANG - Periode: ${currentMonthName}`
+      : `ACCUMULATED ITEM OUTFLOW SUMMARY - Period: ${currentMonthName}`;
+      
+    const ledgerTitle = language === 'id'
+      ? `DAFTAR RINCIAN TRANSAKSI DETAIL KELUAR`
+      : `ALL DETAIL TRANSACTION OUTFLOW LEDGER`;
+
+    const csvLines = [
+      `"${summaryTitle.replace(/"/g, '""')}"`,
+      summaryHeaders.join(','),
+      ...summaryRows.map(row => row.join(',')),
+      '', // empty space separator
+      '', // empty space separator
+      `"${ledgerTitle.replace(/"/g, '""')}"`,
       headers.join(','),
       ...rows.map(row => row.join(','))
-    ].join('\n');
+    ];
+
+    // We prepend \uFEFF to specify UTF-8 encoding for proper Excel import
+    const csvContent = "\uFEFF" + csvLines.join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -287,6 +477,75 @@ export default function LogReportPage() {
         </div>
       </div>
 
+      {/* Daily Outflow Trend Chart */}
+      <div className="bg-[#111114]/40 border border-white/5 rounded-3xl p-6 shadow-sm overflow-hidden space-y-5">
+        <div>
+          <h2 className="text-xs font-bold text-white uppercase tracking-[0.2em] flex items-center gap-2">
+            <span className="w-1.5 h-3 bg-indigo-500 rounded-sm"></span>
+            {language === 'id' ? 'Tren Aktivitas Pengambilan Harian' : 'Daily Dispatch Activity Trend'}
+          </h2>
+          <p className="text-[11px] text-slate-400 mt-1 max-w-xl">
+            {language === 'id' 
+              ? `Representasi visual frekuensi penarikan total unit produk per hari dalam siklus bulan ${currentMonthName}.`
+              : `Visual representation of aggregate product units dispatched per calendar day during ${currentMonthName}.`}
+          </p>
+        </div>
+
+        <div className="h-60 sm:h-72 w-full mt-2">
+          {isMounted ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis 
+                  dataKey="dayLabel" 
+                  stroke="#475569" 
+                  fontSize={10} 
+                  fontFamily="monospace"
+                  tickLine={false}
+                  axisLine={false}
+                  dy={8}
+                />
+                <YAxis 
+                  stroke="#475569" 
+                  fontSize={10} 
+                  fontFamily="monospace"
+                  tickLine={false}
+                  axisLine={false}
+                  dx={-4}
+                />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255, 255, 255, 0.02)' }} />
+                <Bar 
+                  dataKey="quantity" 
+                  fill="#6366f1" 
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={30}
+                >
+                  {chartData.map((entry: any, index: number) => {
+                    const hasActivity = entry.quantity > 0;
+                    return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={hasActivity ? '#6366f1' : '#1e1b4b'} 
+                        fillOpacity={hasActivity ? 0.9 : 0.2} 
+                      />
+                    );
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-slate-950/20 border border-white/5 rounded-2xl animate-pulse">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                {language === 'id' ? 'MEMBUAT GRAFIK TREN...' : 'LOADING TREND VISUAL...'}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Database Reset Alert Banner */}
       <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-3xl p-5 flex items-start gap-4">
         <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400 flex-shrink-0">
@@ -305,7 +564,27 @@ export default function LogReportPage() {
       </div>
 
       {/* Main Filter Control Panel */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+        {/* Period Selector Dropdown */}
+        <div className="flex items-center gap-2 bg-[#111114] border border-white/5 rounded-2xl px-3.5 py-1 min-w-[200px]">
+          <Calendar className="text-indigo-400 flex-shrink-0" size={16} />
+          <select
+            value={`${selectedYear}-${selectedMonth}`}
+            onChange={(e) => {
+              const [y, m] = e.target.value.split('-').map(Number);
+              setSelectedMonth(m);
+              setSelectedYear(y);
+            }}
+            className="flex-1 bg-transparent border-none text-xs font-semibold text-white focus:outline-none py-2 px-1 rounded-xl cursor-pointer"
+          >
+            {periodOptions.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-slate-950 text-slate-200">
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
           <input
@@ -318,7 +597,10 @@ export default function LogReportPage() {
         </div>
 
         <button
-          onClick={fetchCurrentMonthTransactions}
+          onClick={() => {
+            fetchAvailablePeriods();
+            fetchCurrentMonthTransactions();
+          }}
           className="px-4 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap"
         >
           <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -453,6 +735,6 @@ export default function LogReportPage() {
 
   // Small helper to dynamically pull month name safely during calculation text blocks
   function currentMonthNameName() {
-    return language === 'id' ? monthNamesID[currentMonthNum] : monthNamesEN[currentMonthNum];
+    return language === 'id' ? monthNamesID[selectedMonth] : monthNamesEN[selectedMonth];
   }
 }
