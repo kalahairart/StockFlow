@@ -189,7 +189,7 @@ export default function LogReportPage() {
       avgUnits,
       totalValue: new Intl.NumberFormat(language === 'id' ? 'id-ID' : 'en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'IDR',
         notation: 'compact'
       }).format(totalValue)
     };
@@ -263,8 +263,8 @@ export default function LogReportPage() {
       'SKU / Item Name',
       'Category',
       'Quantity Out',
-      'Unit Cost (USD)',
-      'Total Value (USD)',
+      'Unit Cost (IDR)',
+      'Total Value (IDR)',
       'Date Dispatched',
       'Time Dispatched',
       'Operator',
@@ -322,7 +322,7 @@ export default function LogReportPage() {
       language === 'id' ? 'Nama Item / Produk' : 'Item / Product Name',
       language === 'id' ? 'Kategori' : 'Category',
       language === 'id' ? 'Total Keluar' : 'Total Quantity Out',
-      language === 'id' ? 'Total Nilai (USD)' : 'Total Value (USD)'
+      language === 'id' ? 'Total Nilai (IDR)' : 'Total Value (IDR)'
     ];
 
     const summaryRows: string[][] = [];
