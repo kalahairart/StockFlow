@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { Layers, AlertCircle, DollarSign, Truck, Filter, Plus, ArrowUpRight, TrendingUp, Package } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import InventoryTable from '@/components/inventory/inventory-table';
@@ -375,13 +376,15 @@ export default function DashboardPage() {
             color="bg-indigo-500"
             trend={{ value: '12.4%', isUp: true }}
           />
-          <StatCard 
-            title={t.dashboard.lowStock} 
-            value={totals.lowStockCount} 
-            icon={AlertCircle} 
-            color="bg-rose-500"
-            trend={{ value: '8.1%', isUp: false }}
-          />
+          <Link href="/inventory/low-stock" className="block cursor-pointer">
+            <StatCard 
+              title={t.dashboard.lowStock} 
+              value={totals.lowStockCount} 
+              icon={AlertCircle} 
+              color="bg-rose-500"
+              trend={{ value: '8.1%', isUp: false }}
+            />
+          </Link>
           <StatCard 
             title={t.dashboard.assetValue} 
             value={totals.totalValue} 
@@ -537,7 +540,7 @@ export default function DashboardPage() {
                 {t.common.createdBy} <span className="text-white">Candra</span>
             </p>
             <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
-                Obsidian v2.4.0 • Sistem gudang
+                Obsidian v2.4.0 • Logistix Mesh Control
             </p>
         </div>
       </footer>
