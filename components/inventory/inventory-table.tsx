@@ -3,9 +3,12 @@
 import { Product } from '@/types/inventory';
 import { MoreHorizontal, AlertTriangle, ChevronLeft, ChevronRight, Package, ShieldCheck, ArrowUpDown, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { useLanguage } from '@/hooks/use-language';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface InventoryTableProps {
   products: Product[];
@@ -50,13 +53,73 @@ function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
 
 export default function InventoryTable({ products, onDelete, viewMode = 'table' }: InventoryTableProps) {
   const { isAdmin } = useAuth();
+  const { language } = useLanguage();
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  const [archivedIds, setArchivedIds] = useState<string[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
+
+  useEffect(() => {
+    const localStr = localStorage.getItem('archived-products');
+    if (localStr) {
+      try {
+        setArchivedIds(JSON.parse(localStr));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const handleToggleArchive = async (productId: string, currentlyArchived: boolean) => {
+    let updated: string[];
+    if (currentlyArchived) {
+      updated = archivedIds.filter(id => id !== productId);
+    } else {
+      updated = [...archivedIds, productId];
+    }
+    setArchivedIds(updated);
+    localStorage.setItem('archived-products', JSON.stringify(updated));
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_archived: !currentlyArchived } as any)
+        .eq('id', productId);
+      
+      if (!error) {
+        toast.success(
+          language === 'id' 
+            ? (currentlyArchived ? 'Produk dibuka dari arsip' : 'Produk berhasil diarsipkan')
+            : (currentlyArchived ? 'Product unarchived' : 'Product archived')
+        );
+      } else {
+        console.warn('Database archive update failed, relying on local storage fallback:', error.message);
+        toast.info(
+          language === 'id'
+            ? 'Kolom DB tidak tersedia, diarsipkan secara lokal di peramban ini'
+            : 'Database column missing, archived locally on this browser'
+        );
+      }
+    } catch (e) {
+      console.error('Archive update error:', e);
+    }
+  };
+
+  const filteredArchiveProducts = useMemo(() => {
+    return products.filter(p => {
+      const isArchived = !!(p as any).is_archived || archivedIds.includes(p.id);
+      if (isArchived) {
+        return isAdmin && showArchived;
+      }
+      return true;
+    });
+  }, [products, archivedIds, isAdmin, showArchived]);
+
   const sortedProducts = useMemo(() => {
-    const list = [...products].sort((a, b) => {
+    const list = [...filteredArchiveProducts].sort((a, b) => {
       const aVal = a[sortKey];
       const bVal = b[sortKey];
       if (typeof aVal === 'string' && typeof bVal === 'string') {
@@ -68,7 +131,7 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
       return 0;
     });
     return list;
-  }, [products, sortKey, sortOrder]);
+  }, [filteredArchiveProducts, sortKey, sortOrder]);
 
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
   const paginatedProducts = useMemo(() => {
@@ -87,11 +150,37 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
 
   if (viewMode === 'grid') {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 w-full">
+        {isAdmin && (
+          <div className="bg-[#111114]/50 backdrop-blur-sm border border-white/5 rounded-3xl px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {language === 'id' ? 'Kontrol Arsip Administrator' : 'Administrator Archive Control'}
+              </p>
+            </div>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input 
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => {
+                  setShowArchived(e.target.checked);
+                  setCurrentPage(1);
+                }}
+                className="w-4 h-4 accent-indigo-600 rounded border-white/10 bg-slate-950 focus:ring-indigo-500/20 focus:ring-2 cursor-pointer"
+              />
+              <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                {language === 'id' ? 'Tampilkan Barang Diarsipkan' : 'Show Archived Items'}
+              </span>
+            </label>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
             {paginatedProducts.map((product) => {
               const isCritical = product.stock_quantity <= product.min_stock;
+              const isProductArchived = !!(product as any).is_archived || archivedIds.includes(product.id);
               return (
                 <motion.div
                   layout
@@ -109,9 +198,16 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
                   </div>
 
                   <div>
-                    <Link href={`/products/${product.id}`} className="text-lg font-bold text-white tracking-tight hover:text-indigo-400 transition-colors line-clamp-1">
-                      {product.name}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/products/${product.id}`} className="text-lg font-bold text-white tracking-tight hover:text-indigo-400 transition-colors line-clamp-1 flex-1">
+                        {product.name}
+                      </Link>
+                      {isProductArchived && (
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 text-[8px] font-black tracking-widest uppercase border border-amber-500/20 select-none shrink-0">
+                          {language === 'id' ? 'ARSIP' : 'ARCHIVED'}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-slate-600 font-mono tracking-widest mt-1 uppercase">ID: {product.id.slice(0, 8)}</p>
                   </div>
 
@@ -128,17 +224,36 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2 pt-4 border-t border-white/5">
-                    <div className="flex flex-col">
+                  <div className="flex items-center justify-between mt-2 pt-4 border-t border-white/5 gap-2">
+                    <div className="flex flex-col min-w-0">
                       <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Classification</p>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{product.category}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{product.category}</span>
                     </div>
-                    <Link 
-                      href={`/products/${product.id}`}
-                      className="p-2 bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600/20 rounded-xl transition-all"
-                    >
-                      <ExternalLink size={16} />
-                    </Link>
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleToggleArchive(product.id, isProductArchived)}
+                          className={`px-2.5 py-1.5 text-[9px] font-bold rounded-lg transition-all border active:scale-95 cursor-pointer ${
+                            isProductArchived 
+                              ? 'bg-amber-500/15 hover:bg-amber-500/35 text-amber-300 border-amber-500/25' 
+                              : 'bg-indigo-500/15 hover:bg-indigo-500/35 text-indigo-300 border-indigo-500/25'
+                          }`}
+                        >
+                          {isProductArchived 
+                            ? (language === 'id' ? 'BUKA' : 'UNARCHIVE') 
+                            : (language === 'id' ? 'ARSIP' : 'ARCHIVE')}
+                        </button>
+                      )}
+
+                      <Link 
+                        href={`/products/${product.id}`}
+                        className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-bold rounded-lg transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>{language === 'id' ? 'DETAIL' : 'DETAILS'}</span>
+                        <ExternalLink size={10} />
+                      </Link>
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -148,7 +263,7 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
         
         {/* Pagination Controls */}
         <div className="mt-4 border-t border-white/5 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-slate-500 font-bold uppercase tracking-[0.1em]">
-          <p>Page <span className="text-white">{currentPage}</span> of <span className="text-white">{totalPages || 1}</span> | Matches: <span className="text-white">{products.length}</span></p>
+          <p>Page <span className="text-white">{currentPage}</span> of <span className="text-white">{totalPages || 1}</span> | Matches: <span className="text-white">{filteredArchiveProducts.length}</span></p>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -183,6 +298,31 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
 
   return (
     <div className="flex-1 bg-[#111114]/50 backdrop-blur-sm border border-white/5 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+      {isAdmin && (
+        <div className="px-5 py-3.5 bg-white/[0.02] border-b border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {language === 'id' ? 'Kontrol Arsip Administrator' : 'Administrator Archive Control'}
+            </p>
+          </div>
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input 
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => {
+                setShowArchived(e.target.checked);
+                setCurrentPage(1);
+              }}
+              className="w-4 h-4 accent-indigo-600 rounded border-white/10 bg-slate-950 focus:ring-indigo-500/20 focus:ring-2 cursor-pointer"
+            />
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+              {language === 'id' ? 'Tampilkan Barang Diarsipkan' : 'Show Archived Items'}
+            </span>
+          </label>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -214,6 +354,7 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
             <AnimatePresence mode="popLayout">
               {paginatedProducts.map((product) => {
                 const isCritical = product.stock_quantity <= product.min_stock;
+                const isProductArchived = !!(product as any).is_archived || archivedIds.includes(product.id);
                 return (
                   <motion.tr 
                     layout
@@ -229,10 +370,17 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
                           <Package size={14} className="sm:w-4 sm:h-4" />
                         </div>
                         <div className="min-w-0">
-                          <Link href={`/products/${product.id}`} className="text-white font-bold tracking-tight hover:text-indigo-400 transition-colors block truncate max-w-[120px] sm:max-w-none">
-                            {product.name}
-                          </Link>
-                          <p className="text-[9px] sm:text-[10px] text-slate-600 font-mono tracking-widest mt-0.5 truncate">ID: {product.id.slice(0, 8).toUpperCase()}</p>
+                          <div className="flex items-center gap-2">
+                            <Link href={`/products/${product.id}`} className="text-white font-bold tracking-tight hover:text-indigo-400 transition-colors block truncate max-w-[120px] sm:max-w-none">
+                              {product.name}
+                            </Link>
+                            {isProductArchived && (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 text-[8px] font-black tracking-widest uppercase border border-amber-500/20 select-none shrink-0">
+                                {language === 'id' ? 'ARSIP' : 'ARCHIVED'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[9px] sm:text-[10px] text-slate-600 font-mono tracking-widest mt-0.5 truncate font-bold">ID: {product.id.slice(0, 8).toUpperCase()}</p>
                         </div>
                       </div>
                     </td>
@@ -276,12 +424,26 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
                     </td>
                     <td className="p-4 sm:p-5 text-right">
                       <div className="flex items-center justify-end gap-1.5 sm:gap-2">
-                         <Link 
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleToggleArchive(product.id, isProductArchived)}
+                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all border active:scale-95 cursor-pointer ${
+                              isProductArchived 
+                                ? 'bg-amber-500/15 hover:bg-amber-500/35 text-amber-300 border-amber-500/25' 
+                                : 'bg-indigo-500/15 hover:bg-indigo-500/35 text-indigo-300 border-indigo-500/25'
+                            }`}
+                          >
+                            {isProductArchived 
+                              ? (language === 'id' ? 'BUKA ARSIP' : 'UNARCHIVE') 
+                              : (language === 'id' ? 'ARSIPKAN' : 'ARCHIVE')}
+                          </button>
+                        )}
+
+                        <Link 
                           href={`/products/${product.id}`}
-                          className="p-1.5 sm:px-3 sm:py-1.5 bg-slate-800/50 hover:bg-slate-700 text-slate-300 text-[10px] font-bold rounded-lg transition-all border border-white/5 active:scale-95 flex items-center gap-1.5"
-                          title="Details"
-                         >
-                          <span className="hidden xs:inline">DETAILS</span>
+                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold rounded-lg transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>{language === 'id' ? 'DETAIL' : 'DETAILS'}</span>
                           <ExternalLink size={10} />
                         </Link>
                         {isAdmin && <DeleteButton onConfirm={() => onDelete?.(product.id)} />}
