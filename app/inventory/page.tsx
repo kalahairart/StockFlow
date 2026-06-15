@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { Plus, Search, Filter, RefreshCw, Box, AlertTriangle, Package } from 'lucide-react';
 import InventoryTable from '@/components/inventory/inventory-table';
 import StockModal from '@/components/inventory/stock-modal';
@@ -14,7 +15,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/hooks/use-language';
 
 export default function InventoryPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +25,10 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+
+  const lowStockCount = useMemo(() => {
+    return products.filter(p => p.stock_quantity <= p.min_stock).length;
+  }, [products]);
 
   useEffect(() => {
     fetchInventory();
@@ -159,7 +164,13 @@ export default function InventoryPage() {
             updatedProduct.category,
             updatedProduct.min_stock
           );
-          sendTelegramNotification(notificationMessage);
+          sendTelegramNotification(notificationMessage).then(success => {
+            if (!success) {
+              toast.error('Telegram Error', {
+                description: 'Gagal mengirim notifikasi ke bot. Periksa konfigurasi API Token Anda.'
+              });
+            }
+          });
         }
 
         if (updatedProduct.stock_quantity <= updatedProduct.min_stock) {
@@ -194,6 +205,12 @@ export default function InventoryPage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
+    if (!isAdmin) {
+      toast.error('Akses Ditolak', {
+        description: 'Hanya administrator yang memiliki wewenang untuk menghapus produk.',
+      });
+      return;
+    }
     try {
       await supabase.from('transactions').delete().eq('product_id', id);
       const { error } = await supabase.from('products').delete().eq('id', id);
@@ -227,6 +244,15 @@ export default function InventoryPage() {
           >
             <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
           </button>
+          {lowStockCount > 0 && (
+            <Link 
+              href="/inventory/low-stock"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 hover:text-rose-400 border border-rose-500/25 rounded-2xl transition-all font-bold text-[10px] sm:text-xs tracking-wider animate-pulse whitespace-nowrap cursor-pointer shrink-0"
+            >
+              <AlertTriangle size={14} />
+              <span>{lowStockCount} {t.dashboard.lowStock.toUpperCase()}</span>
+            </Link>
+          )}
           <button 
             onClick={() => setIsProductModalOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 text-slate-300 text-[10px] sm:text-xs font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl hover:bg-slate-800 transition-all active:scale-95 whitespace-nowrap"
