@@ -1,15 +1,49 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Shield, Database, Cloud, Bell, User, HardDrive, Bot, Link2, Send, Terminal, Key, ShieldCheck, Check } from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import { Settings, Shield, Database, Cloud, Bell, User, HardDrive, Bot, Link2, Send, Terminal, Key, ShieldCheck, Check, Lock, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/hooks/use-language';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
   const [isLinking, setIsLinking] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [setupResult, setSetupResult] = useState<{ success: boolean; message: string; webhook_url?: string } | null>(null);
+
+  if (authLoading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center space-y-4 py-20">
+        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Verifying Authority...</p>
+      </div>
+    );
+  }
+
+  // Guard Clause for unauthorized roles
+  if (!isAdmin) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-md mx-auto text-center py-20">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-2xl mb-6">
+          <Lock size={32} />
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-2">Akses Ditolak / Access Denied</h1>
+        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          Halaman ini hanya dapat diakses oleh Administrator Sistem. Modul Anda tidak memiliki otoritas tingkat tinggi yang diperlukan.
+        </p>
+        <Link 
+          href="/"
+          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-indigo-900/40 uppercase tracking-widest flex items-center gap-2"
+        >
+          <ArrowLeft size={14} />
+          Kembali ke Dashboard
+        </Link>
+      </div>
+    );
+  }
 
   const handleLinkWebhook = async () => {
     setIsLinking(true);
@@ -55,8 +89,8 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           message: language === 'id'
-            ? '🔔 <b>UJI NOTIFIKASI STOCKFLOW</b>\n\nHalo! Ini adalah pesan uji coba dari StockFlow WMS. Hubungan notifikasi Anda aktif dan berfungsi dengan sempurna.'
-            : '🔔 <b>STOCKFLOW SYSTEMS TEST</b>\n\nHello! This is a verification pulse from StockFlow WMS. Your warning notification channel is functional.'
+            ? '🔔 <b>UJI NOTIFIKASI STOCKFLOW</b>\n\nHalo! Ini adalah pesan uji coba dari StockFlow Obsidian. Hubungan notifikasi Anda aktif dan berfungsi dengan sempurna.'
+            : '🔔 <b>STOCKFLOW SYSTEMS TEST</b>\n\nHello! This is a verification pulse from StockFlow Obsidian. Your warning notification channel is functional.'
         })
       });
 
