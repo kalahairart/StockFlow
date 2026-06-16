@@ -91,7 +91,7 @@ export default function DashboardPage() {
     return {
       skuCount,
       lowStockCount,
-      totalValue: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(totalValuation),
+      totalValue: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IDR', notation: 'compact' }).format(totalValuation),
       monthlyOutflow: `${monthlyOutflow} Units`
     };
   }, [products, transactions]);
