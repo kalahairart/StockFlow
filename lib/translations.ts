@@ -104,7 +104,7 @@ export const translations = {
       initiateDispatch: 'Mulai Pengiriman',
       recordReturn: 'Catat Pengembalian',
       confirmDispatch: 'Konfirmasi Pengiriman',
-      finalizeReturn: 'Finalisasi Pengembalian',
+      finalizeReturn: 'Penyelesaian Pengembalian',
     },
     transactions: {
       title: 'Audit Trail Transaksi',
@@ -139,7 +139,7 @@ export const translations = {
     },
     auth: {
       loginTitle: 'Halaman Login',
-      establishSession: 'Masuk Ke Sesi',
+      establishSession: 'Login',
       validating: 'Validasi...',
       noAccount: 'Belum punya identitas?',
       initializeAccount: 'Daftar Akun',
