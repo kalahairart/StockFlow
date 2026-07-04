@@ -66,6 +66,25 @@ export async function GET(req: NextRequest) {
     }
 
     // Return the cached roster otherwise
+    // Try to query the public database table `users` first as a secondary fallback before using static memory cache
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (supabaseUrl && anonKey) {
+      try {
+        const client = createClient(supabaseUrl, anonKey);
+        const { data: dbUsers, error: dbErr } = await client
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!dbErr && dbUsers && dbUsers.length > 0) {
+          return NextResponse.json({ success: true, users: dbUsers, source: 'supabase-table' });
+        }
+        console.warn('Supabase users table query returned empty or failed:', dbErr?.message);
+      } catch (dbErr: any) {
+        console.warn('Supabase users table query error:', dbErr.message);
+      }
+    }
+
     return NextResponse.json({ success: true, users: userCache, source: 'memory-fallback' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
