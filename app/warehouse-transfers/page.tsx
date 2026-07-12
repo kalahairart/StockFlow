@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { useLanguage } from '@/hooks/use-language';
-import { supabase } from '@/lib/supabase';
-import { Product, Transaction } from '@/types/inventory';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../../hooks/use-auth';
+import { useLanguage } from '../../hooks/use-language';
+import { supabase, isRealSupabaseConfigured } from '../../lib/supabase';
+import { Product, Transaction } from '../../types';
 import { 
   ArrowRightLeft, 
   Plus, 
@@ -22,25 +22,15 @@ import {
   Sparkles, 
   RefreshCw, 
   Info,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   PackageCheck,
   PackagePlus,
-  HelpCircle
+  HelpCircle,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
-
-// Safe check if real Supabase keys are configured
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const isRealSupabaseConfigured = !!(
-  supabaseUrl && 
-  supabaseAnonKey && 
-  supabaseUrl !== 'placeholder' && 
-  !supabaseUrl.includes('placeholder')
-);
 
 // Define local interfaces for the transfer record
 interface WarehouseTransfer {
@@ -57,6 +47,17 @@ interface WarehouseTransfer {
   note: string;
   created_at: string;
 }
+
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
 export default function WarehouseTransfersPage() {
   const { user, isAdmin } = useAuth();
@@ -88,7 +89,7 @@ export default function WarehouseTransfersPage() {
     custom_item_name: '',
     category: 'Gudang',
     quantity: 1,
-    source_warehouse: 'Gudang Pusat (HQ)',
+    source_warehouse: 'Custom...',
     custom_source_warehouse: '',
     document_number: '',
     arrival_date: new Date().toISOString().split('T')[0],
@@ -184,7 +185,10 @@ export default function WarehouseTransfersPage() {
             console.warn('warehouse_transfers table error, falling back to localStorage:', error);
             fallbackTriggered = true;
           } else {
-            loadedTransfers = data || [];
+            loadedTransfers = (data || []).map((item: any) => ({
+              ...item,
+              product_id: item.product_id || 'custom'
+            }));
           }
         } catch (dbErr) {
           console.warn('Supabase query failed, falling back to localStorage:', dbErr);
@@ -334,7 +338,7 @@ export default function WarehouseTransfersPage() {
 
       // Construct transfer entity
       const newTransfer: WarehouseTransfer = {
-        id: `trf-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: generateUUID(),
         document_number: formData.document_number || generateDocumentNumber(),
         product_id: finalItemId,
         item_name: finalItemName,
@@ -342,7 +346,7 @@ export default function WarehouseTransfersPage() {
         quantity: Number(formData.quantity) || 1,
         source_warehouse: finalSourceWarehouse,
         arrival_date: formData.arrival_date,
-        operator_name: formData.operator_name || currentOperatorName,
+        operator_name: currentOperatorName,
         status: formData.status,
         note: formData.note.trim(),
         created_at: new Date().toISOString()
@@ -364,7 +368,7 @@ export default function WarehouseTransfersPage() {
               quantity: newTransfer.quantity,
               unit_cost: 0, // warehouse transfers do not modify cost base by default
               user_id: user?.id,
-              note: `[Transfer Guding] Asal: ${newTransfer.source_warehouse} | No: ${newTransfer.document_number} | Operator: ${newTransfer.operator_name}`
+              note: `[Transfer Gudang] Asal: ${newTransfer.source_warehouse} | No: ${newTransfer.document_number} | Operator: ${newTransfer.operator_name}`
             }]);
           
           if (transError) throw new Error(`Stock transaction insertion failed: ${transError.message}`);
@@ -372,14 +376,18 @@ export default function WarehouseTransfersPage() {
 
         // 2. Insert into warehouse_transfers table if supported, otherwise save to local fallback
         if (!useLocalStorageFallback) {
+          const dbTransfer = {
+            ...newTransfer,
+            product_id: newTransfer.product_id === 'custom' ? null : newTransfer.product_id
+          };
           const { error: dbError } = await supabase
             .from('warehouse_transfers')
-            .insert([newTransfer]);
+            .insert([dbTransfer]);
           
           if (dbError) {
             console.warn('Failing to insert into warehouse_transfers table, caching in localStorage...', dbError);
             // Save to localStorage so they never lose trace
-            const localCopy = [...transfers, newTransfer];
+            const localCopy = [newTransfer, ...transfers];
             localStorage.setItem('stockflow_local_warehouse_transfers', JSON.stringify(localCopy));
             setUseLocalStorageFallback(true);
           }
@@ -648,7 +656,7 @@ export default function WarehouseTransfersPage() {
             </p>
             <p>
               {language === 'id'
-                ? 'Catatan log transfer disimpan secara aman di browser lokal. Namun, jika Anda memilih untuk menyelaraskan dengan produk inventaris resmi, sistem ini secara otomatis mendaftarkan aliran stok di table transaksi Supabase!'
+                ? 'Catatan log transfer disimpan secara aman di browser lokal. Namun, jika Anda memilih untuk menyelaraskan dengan produk inventaris resmi, sistem ini secara otomatis mendaftarkan aliran stok di tabel transaksi Supabase!'
                 : 'Transfer log trace is written locally. However, if you bind arrivals to a registered SKU, stock levels and permanent transaction histories are still updated in Supabase cloud.'}
             </p>
           </div>
@@ -1062,10 +1070,6 @@ export default function WarehouseTransfersPage() {
                       onChange={handleInputChange}
                       className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-semibold focus:outline-none focus:border-indigo-500 cursor-pointer"
                     >
-                      <option value="Gudang Pusat (HQ)">Gudang Pusat (HQ)</option>
-                      <option value="Gudang Cabang Utara">Gudang Cabang Utara</option>
-                      <option value="Gudang Cabang Selatan">Gudang Cabang Selatan</option>
-                      <option value="Gudang Logistik Barat">Gudang Logistik Barat</option>
                       <option value="Custom...">{language === 'id' ? 'Lainnya (Ketik Manual)...' : 'Other (Type Manual)...'}</option>
                     </select>
                   </div>
@@ -1109,17 +1113,22 @@ export default function WarehouseTransfersPage() {
                   {/* Operator */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <User size={13} className="text-indigo-400" />
-                      {language === 'id' ? 'Petugas Input Sistem:' : 'Input Operator:'}
+                      <Lock size={13} className="text-amber-500" />
+                      {language === 'id' ? 'Petugas Input (Terkunci Otomatis):' : 'Input Operator (Auto Locked):'}
                     </label>
-                    <input
-                      type="text"
-                      name="operator_name"
-                      value={formData.operator_name}
-                      onChange={handleInputChange}
-                      className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-bold focus:outline-none focus:border-indigo-500"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="operator_name"
+                        value={currentOperatorName}
+                        readOnly
+                        className="w-full bg-slate-900/50 border border-amber-500/10 rounded-xl px-4 py-3 text-amber-400 text-xs font-bold cursor-not-allowed"
+                        required
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-md font-bold uppercase tracking-wider">
+                        {language === 'id' ? 'AUDIT OK' : 'VERIFIED'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
