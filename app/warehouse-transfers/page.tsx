@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../../hooks/use-auth';
-import { useLanguage } from '../../hooks/use-language';
-import { supabase, isRealSupabaseConfigured } from '../../lib/supabase';
-import { Product, Transaction } from '../../types';
+import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useLanguage } from '@/hooks/use-language';
+import { supabase } from '@/lib/supabase';
+import { Product, Transaction } from '@/types/inventory';
 import { 
   ArrowRightLeft, 
   Plus, 
@@ -22,6 +22,7 @@ import {
   Sparkles, 
   RefreshCw, 
   Info,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   PackageCheck,
@@ -31,6 +32,16 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+
+// Safe check if real Supabase keys are configured
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const isRealSupabaseConfigured = !!(
+  supabaseUrl && 
+  supabaseAnonKey && 
+  supabaseUrl !== 'placeholder' && 
+  !supabaseUrl.includes('placeholder')
+);
 
 // Define local interfaces for the transfer record
 interface WarehouseTransfer {
@@ -387,7 +398,7 @@ export default function WarehouseTransfersPage() {
           if (dbError) {
             console.warn('Failing to insert into warehouse_transfers table, caching in localStorage...', dbError);
             // Save to localStorage so they never lose trace
-            const localCopy = [newTransfer, ...transfers];
+            const localCopy = [...transfers, newTransfer];
             localStorage.setItem('stockflow_local_warehouse_transfers', JSON.stringify(localCopy));
             setUseLocalStorageFallback(true);
           }
@@ -656,7 +667,7 @@ export default function WarehouseTransfersPage() {
             </p>
             <p>
               {language === 'id'
-                ? 'Catatan log transfer disimpan secara aman di browser lokal. Namun, jika Anda memilih untuk menyelaraskan dengan produk inventaris resmi, sistem ini secara otomatis mendaftarkan aliran stok di tabel transaksi Supabase!'
+                ? 'Catatan log transfer disimpan secara aman di browser lokal. Namun, jika Anda memilih untuk menyelaraskan dengan produk inventaris resmi, sistem ini secara otomatis mendaftarkan aliran stok di table transaksi Supabase!'
                 : 'Transfer log trace is written locally. However, if you bind arrivals to a registered SKU, stock levels and permanent transaction histories are still updated in Supabase cloud.'}
             </p>
           </div>
