@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Layers, AlertCircle, DollarSign, Truck, Filter, Plus, ArrowUpRight, TrendingUp, Package } from 'lucide-react';
+import { Layers, AlertCircle, Coins, Truck, Filter, Plus, ArrowUpRight, TrendingUp, Package } from 'lucide-react';
 import StatCard from '@/components/dashboard/stat-card';
 import InventoryTable from '@/components/inventory/inventory-table';
 import StockModal from '@/components/inventory/stock-modal';
@@ -388,7 +388,7 @@ export default function DashboardPage() {
           <StatCard 
             title={t.dashboard.assetValue} 
             value={totals.totalValue} 
-            icon={DollarSign} 
+            icon={Coins} 
             color="bg-emerald-500"
             trend={{ value: '4.2%', isUp: true }}
           />
