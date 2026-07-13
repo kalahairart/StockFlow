@@ -13,7 +13,6 @@ import {
   Shield, 
   Lock, 
   RefreshCw, 
-  DollarSign, 
   User, 
   CalendarDays,
   FileText,
