@@ -11,7 +11,7 @@ import {
   ArrowLeft, 
   Clock, 
   Calendar, 
-  DollarSign, 
+  Coins, 
   Package, 
   FileSpreadsheet, 
   ChevronRight, 
@@ -370,7 +370,7 @@ export default function OutgoingActivityPage() {
 
         <div id="metric-card-total-value" className="bg-[#111114]/50 border border-white/5 rounded-3xl p-6 flex items-center gap-4 shadow-xl">
           <div id="total-val-icon-wrapper" className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl">
-            <DollarSign id="dollar-icon-metric" size={24} />
+            <Coins id="dollar-icon-metric" size={24} />
           </div>
           <div id="total-val-content">
             <p id="total-val-label" className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
