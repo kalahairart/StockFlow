@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '@/hooks/use-language';
-import { X, ArrowUpCircle, ArrowDownCircle, Package, Info, DollarSign } from 'lucide-react';
+import { X, ArrowUpCircle, ArrowDownCircle, Package, Info } from 'lucide-react';
 import { Product } from '@/types/inventory';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -177,13 +177,13 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                       <div className="xs:col-span-1 space-y-2 sm:space-y-3">
                           <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">{t.common.unitCost}</label>
                           <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs select-none">Rp</span>
                             <input
                                 type="number"
-                                step="0.01"
+                                step="1"
                                 {...register('unit_cost', { valueAsNumber: true })}
-                                className="w-full bg-slate-950 border border-white/5 rounded-2xl pl-8 pr-3 py-3 sm:py-4 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
-                                placeholder="0.00"
+                                className="w-full bg-slate-950 border border-white/5 rounded-2xl pl-10 pr-3 py-3 sm:py-4 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
+                                placeholder="0"
                             />
                           </div>
                           {errors.unit_cost && <p className="text-[10px] text-rose-500 font-bold uppercase tracking-tight ml-1">Req.</p>}
