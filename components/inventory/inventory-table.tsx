@@ -404,7 +404,12 @@ export default function InventoryTable({ products, onDelete, viewMode = 'table' 
                     </td>
                     <td className="p-5 hidden lg:table-cell">
                       <span className="font-mono text-xs font-bold text-slate-400">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.unit_cost || 0)}
+                        {new Intl.NumberFormat(language === 'id' ? 'id-ID' : 'en-US', { 
+                          style: 'currency', 
+                          currency: 'IDR',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0
+                        }).format(product.unit_cost || 0)}
                       </span>
                     </td>
                     <td className="p-5 hidden sm:table-cell">
