@@ -12,7 +12,7 @@ import {
   Trash2, 
   Calendar,
   User,
-  DollarSign,
+  Coins,
   Package,
   History,
   Box,
@@ -546,7 +546,7 @@ export default function LaundryPage() {
             bgColor="bg-indigo-500/10"
           />
           <StatCard 
-            icon={DollarSign} 
+            icon={Coins} 
             label={t.laundry.totalExpenditure} 
             value={`Rp ${stats.totalCost.toLocaleString()}`} 
             color="text-emerald-400"
