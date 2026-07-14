@@ -99,7 +99,7 @@ export const translations = {
       dispatchSuccess: 'Pengiriman Dikonfirmasi',
       returnSuccess: 'Pengembalian Dicatat',
       totalStock: 'Total Stok Handuk',
-      itemsInCycle: 'Barang dalam Siklus',
+      itemsInCycle: 'Barang dalam Proses',
       totalExpenditure: 'Total Pengeluaran',
       pendingBatches: 'Batch Menunggu',
       initiateDispatch: 'Mulai Pengiriman',
