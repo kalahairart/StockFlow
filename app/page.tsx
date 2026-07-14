@@ -1,17 +1,20 @@
+'use client';
+
 import { useState, useEffect, useMemo } from 'react';
-import Link from '../link';
-import { Layers, AlertCircle, Coins, Truck, Filter, Plus, ArrowUpRight, TrendingUp } from 'lucide-react';
-import StatCard from '../dashboard/stat-card';
-import InventoryTable from '../inventory/inventory-table';
-import StockModal from '../inventory/stock-modal';
-import ProductModal from '../inventory/product-modal';
-import MovementChart from '../dashboard/movement-chart';
-import { Product, Transaction } from '../../types';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../hooks/use-auth';
-import { sendTelegramNotification, formatStockAlert } from '../../lib/notifications';
+import Link from 'next/link';
+import { Layers, AlertCircle, Coins, Truck, Filter, Plus, ArrowUpRight, TrendingUp, Package } from 'lucide-react';
+import StatCard from '@/components/dashboard/stat-card';
+import InventoryTable from '@/components/inventory/inventory-table';
+import StockModal from '@/components/inventory/stock-modal';
+import ProductModal from '@/components/inventory/product-modal';
+import MovementChart from '@/components/dashboard/movement-chart';
+import { Product, Transaction, MovementData } from '@/types/inventory';
+import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '@/hooks/use-auth';
+import { sendTelegramNotification, formatStockAlert } from '@/lib/notifications';
 import { toast } from 'sonner';
-import { useLanguage } from '../../hooks/use-language';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
@@ -26,20 +29,7 @@ export default function DashboardPage() {
 
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (language === 'id') {
-      if (hour >= 5 && hour < 11) return 'Selamat Pagi';
-      if (hour >= 11 && hour < 15) return 'Selamat Siang';
-      if (hour >= 15 && hour < 18) return 'Selamat Sore';
-      return 'Selamat Malam';
-    } else {
-      if (hour >= 5 && hour < 12) return 'Good Morning';
-      if (hour >= 12 && hour < 17) return 'Good Afternoon';
-      if (hour >= 17 && hour < 21) return 'Good Evening';
-      return 'Good Night';
-    }
-  }, [language, currentTime]);
+  const [greeting, setGreeting] = useState<string>('');
 
   const displayName = useMemo(() => {
     if (user?.user_metadata?.full_name) {
@@ -58,6 +48,23 @@ export default function DashboardPage() {
     fetchDashboardData();
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    let greetText = '';
+    if (language === 'id') {
+      if (hour >= 5 && hour < 11) greetText = 'Selamat Pagi';
+      else if (hour >= 11 && hour < 15) greetText = 'Selamat Siang';
+      else if (hour >= 15 && hour < 18) greetText = 'Selamat Sore';
+      else greetText = 'Selamat Malam';
+    } else {
+      if (hour >= 5 && hour < 12) greetText = 'Good Morning';
+      else if (hour >= 12 && hour < 17) greetText = 'Good Afternoon';
+      else if (hour >= 17 && hour < 21) greetText = 'Good Evening';
+      else greetText = 'Good Night';
+    }
+    setGreeting(greetText);
+  }, [language, currentTime]);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -192,6 +199,7 @@ export default function DashboardPage() {
       const operatorName = user?.user_metadata?.full_name || user?.email || 'System';
 
       // 1. Record the transaction
+      // THE TRIGGER IN THE DB WILL AUTOMATICALLY UPDATE stock_quantity
       const { error: transError } = await supabase
         .from('transactions')
         .insert([{
@@ -269,6 +277,7 @@ export default function DashboardPage() {
       const operatorName = user?.user_metadata?.full_name || user?.email || 'System';
 
       // Step 1: Create the product with 0 stock
+      // We set stock_quantity to 0 because the transaction trigger will update it
       const { data: newProduct, error: productsError } = await supabase
         .from('products')
         .insert([{
@@ -376,7 +385,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               <button 
                 onClick={() => setIsProductModalOpen(true)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 text-slate-300 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all active:scale-95 cursor-pointer"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 text-slate-300 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all active:scale-95"
               >
                 <Plus size={14} />
                 <span className="hidden xs:inline">{t.common.registerSku.toUpperCase()}</span>
@@ -384,7 +393,7 @@ export default function DashboardPage() {
               </button>
               <button 
                 onClick={() => setIsModalOpen(true)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-5 py-2.5 rounded-xl transition-all shadow-xl shadow-indigo-900/30 active:scale-95 cursor-pointer"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-5 py-2.5 rounded-xl transition-all shadow-xl shadow-indigo-900/30 active:scale-95"
               >
                 <Plus size={14} />
                 <span className="hidden xs:inline">{t.common.stockUpdate.toUpperCase()}</span>
@@ -446,7 +455,7 @@ export default function DashboardPage() {
                 </div>
                 <button 
                   onClick={downloadWithdrawalReport}
-                  className="text-[10px] font-black text-amber-500 hover:text-amber-400 uppercase tracking-widest flex items-center gap-1.5 bg-amber-500/5 px-2 py-1 rounded-md border border-amber-500/10 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  className="text-[10px] font-black text-amber-500 hover:text-amber-400 uppercase tracking-widest flex items-center gap-1.5 bg-amber-500/5 px-2 py-1 rounded-md border border-amber-500/10 transition-all hover:scale-105 active:scale-95"
                   title="Download CSV summary"
                 >
                   <ArrowUpRight size={14} />
