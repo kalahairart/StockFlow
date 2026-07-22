@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
               const status = isZero ? '🚫 KOSONG' : isLow ? '⚠️ KRITIS' : '✅ OPTIMAL';
               return `• <b>${p.name}</b> (${p.category})\n` +
                      `  Sisa: <code>${p.stock_quantity}</code> / Min: <code>${p.min_stock}</code>\n` +
-                     `  Biaya: $${Number(p.unit_cost || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}\n` +
+                     `  Biaya: IDR${Number(p.unit_cost || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}\n` +
                      `  Status: <b>${status}</b>`;
             });
 
