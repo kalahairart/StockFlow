@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
         `Maaf, perintah <code>${command}</code> tidak dikenali oleh sistem.\n\n` +
         `Ketik /help untuk menampilkan daftar perintah yang didukung.`;
     }
-
+ 
     // Deliver response
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
