@@ -25,7 +25,8 @@ import {
   Check,
   RefreshCw,
   FolderMinus,
-  CheckSquare
+  CheckSquare,
+  X
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -70,6 +71,7 @@ export default function LaundryPage() {
 
   // New multi-item dispatch state
   const [dispatchItems, setDispatchItems] = useState<DispatchItem[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<'OBSIDIAN GYM' | 'BU RISMA'>('OBSIDIAN GYM');
   const [globalNote, setGlobalNote] = useState('');
   const [deductStock, setDeductStock] = useState(true);
 
@@ -115,20 +117,22 @@ export default function LaundryPage() {
   // Preset prices and items generator
   const initializeDispatchForm = () => {
     const defaultPresets = [
-      { name: 'Bath Towel', unit_cost: 3000, key: 'bath' },
+      { name: 'Hand Towel', unit_cost: 3000, key: 'hand' },
       { name: 'Pool Towel', unit_cost: 4000, key: 'pool' },
-      { name: 'Baju', unit_cost: 5000, key: 'baju' },
-      { name: 'Kain Lap', unit_cost: 1500, key: 'lap' },
-      { name: 'Kimono', unit_cost: 6000, key: 'kimono' }
+      { name: 'Lost and Found', unit_cost: 5000, key: 'lost' },
+      { name: 'Kain Lap', unit_cost: 1500, key: 'lap' }
     ];
 
     const mappedPresets: DispatchItem[] = defaultPresets.map(preset => {
       // Find matching product in inventory based on substrings
-      const match = inventoryProducts.find(p => 
-        p.name.toLowerCase().includes(preset.key) || 
-        (preset.key === 'lap' && p.name.toLowerCase().includes('kain')) ||
-        (preset.key === 'baju' && p.name.toLowerCase().includes('pakaian'))
-      );
+      const match = inventoryProducts.find(p => {
+        const nameLower = p.name.toLowerCase();
+        if (preset.key === 'hand') return nameLower.includes('hand') || nameLower.includes('towel');
+        if (preset.key === 'pool') return nameLower.includes('pool');
+        if (preset.key === 'lost') return nameLower.includes('lost') || nameLower.includes('found') || nameLower.includes('baju');
+        if (preset.key === 'lap') return nameLower.includes('lap') || nameLower.includes('kain');
+        return nameLower.includes(preset.key);
+      });
 
       return {
         name: preset.name,
@@ -140,6 +144,7 @@ export default function LaundryPage() {
     });
 
     setDispatchItems(mappedPresets);
+    setSelectedLocation('OBSIDIAN GYM');
     setGlobalNote('');
     setDeductStock(true);
     setIsModalOpen(true);
@@ -186,11 +191,14 @@ export default function LaundryPage() {
         .map(item => `${item.name} (${item.qty_out} Pcs)`)
         .join(', ');
 
+      const combinedItemName = `[${selectedLocation}] ${summarizedName}`;
+
       // Build structured detail inside the notes list
       const notePayload = {
         is_multi_item: true,
         deduct_stock: deductStock,
         user_note: globalNote,
+        location: selectedLocation,
         items: activeItems.map(item => ({
           name: item.name,
           qty_out: item.qty_out,
@@ -203,7 +211,7 @@ export default function LaundryPage() {
       const { data: recordData, error } = await supabase
         .from('laundry_records')
         .insert([{
-          item_name: summarizedName.length > 250 ? summarizedName.slice(0, 247) + '...' : summarizedName,
+          item_name: combinedItemName.length > 250 ? combinedItemName.slice(0, 247) + '...' : combinedItemName,
           quantity_out: totalQuantityOut,
           quantity_in: 0,
           unit_cost: averageUnitCost,
@@ -492,9 +500,8 @@ export default function LaundryPage() {
   const getItemIcon = (name: string) => {
     const lName = name.toLowerCase();
     if (lName.includes('towel') || lName.includes('handuk')) return Layers;
-    if (lName.includes('baju') || lName.includes('shirt') || lName.includes('pakaian')) return Shirt;
+    if (lName.includes('lost') || lName.includes('found') || lName.includes('baju') || lName.includes('shirt') || lName.includes('pakaian')) return Shirt;
     if (lName.includes('lap') || lName.includes('rag') || lName.includes('cloth')) return CheckSquare;
-    if (lName.includes('kimono') || lName.includes('bathrobe')) return Shirt;
     return Package;
   };
 
@@ -570,7 +577,7 @@ export default function LaundryPage() {
             </h4>
             <p className="text-[11px] text-slate-400 mt-1">
               {language === 'id' 
-                ? 'Sistem laundry telah diperbarui. Sekarang Anda dapat mengirim dan menerima multi-barang sekaligus (Bath Towel, Pool Towel, Kimono, dll) secara terpadu. Klik record pada tabel untuk melihat rincian progres per item.' 
+                ? 'Sistem laundry telah diperbarui. Sekarang Anda dapat mengirim dan menerima multi-barang sekaligus (Hand Towel, Pool Towel, Lost and Found, Kain Lap, dll) secara terpadu. Klik record pada tabel untuk melihat rincian progres per item.' 
                 : 'Sanitation flow now registers compound items in a single dispatch batch. Toggle rows inside the audit ledger to track real-time status details of each material.'}
             </p>
           </div>
@@ -591,8 +598,7 @@ export default function LaundryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                <AnimatePresence mode="popLayout">
-                  {isLoading ? (
+                {isLoading ? (
                     Array(3).fill(0).map((_, i) => (
                       <tr key={i} className="animate-pulse">
                         <td colSpan={6} className="p-8 h-12 bg-white/[0.01]" />
@@ -736,7 +742,7 @@ export default function LaundryPage() {
                                     <div className="flex justify-between items-center pb-2 border-b border-white/5">
                                       <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
                                         <ClipboardList size={14} />
-                                        {language === 'id' ? 'RINCIAN MANIFES DOSSIER' : 'ITEMIZED MANIFEST DOSSIER'}
+                                        {language === 'id' ? 'RINCIAN LAUNDRY' : 'LAUNDRY DETAILS'}
                                       </span>
                                       <span className="text-[9px] font-mono text-slate-500 font-bold">
                                         MASTER BATCH RECORD: {record.id}
@@ -825,7 +831,6 @@ export default function LaundryPage() {
                       );
                     })
                   )}
-                </AnimatePresence>
               </tbody>
             </table>
           </div>
@@ -862,12 +867,10 @@ export default function LaundryPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Group / Multi-Item Input Modal */}
+      </div>      {/* Group / Multi-Item Input Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -879,201 +882,238 @@ export default function LaundryPage() {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl z-10"
+              className="relative w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] bg-slate-900 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl z-10 flex flex-col my-auto overflow-hidden"
             >
-              <div className="p-6 sm:p-8 border-b border-white/5 bg-white/[0.02]">
-                <h3 className="text-xl font-black text-white italic uppercase flex items-center gap-3">
-                  <ArrowUpRight className="text-indigo-400" size={24} />
-                  KIRIM <span className="text-indigo-500">BATCH LAUNDRY</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
-                  {language === 'id' ? 'Pilih dan penuhi jumlah kirim handuk, kain lap, baju, atau kimono' : 'Fill and dispatch towel, clothes, laundry rags or kimonos'}
-                </p>
+              <div className="p-4 sm:p-6 border-b border-white/5 bg-white/[0.02] shrink-0 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-white italic uppercase flex items-center gap-2.5">
+                    <ArrowUpRight className="text-indigo-400 shrink-0" size={22} />
+                    KIRIM <span className="text-indigo-500">PENCUCIAN SECARA BERTAHAP</span>
+                  </h3>
+                  <p className="text-[10px] sm:text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
+                    {language === 'id' ? 'Pilih dan penuhi jumlah kirim hand towel, pool towel, lost and found, atau kain lap' : 'Fill and dispatch hand towels, pool towels, lost and found or rags'}
+                  </p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer shrink-0"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
-              <form onSubmit={handleCreateGroupDispatch} className="p-6 sm:p-8 space-y-6">
-                
-                {/* Scrollable list of category inputs */}
-                <div className="space-y-3.5 max-h-[42vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {dispatchItems.map((item, idx) => {
-                    const ItemIcon = getItemIcon(item.name);
-                    const parsedSubtotal = (item.qty_out || 0) * (item.unit_cost || 0);
-                    
-                    return (
-                      <div 
-                        key={idx} 
-                        className={`p-4 rounded-2xl border transition-all ${
-                          item.enabled 
-                            ? 'bg-indigo-950/20 border-indigo-500/30 shadow-indigo-500/5' 
-                            : 'bg-black/30 border-white/5 opacity-60'
-                        }`}
+              <form onSubmit={handleCreateGroupDispatch} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 custom-scrollbar">
+                  
+                  {/* Dropdown Lokasi / Pemilik */}
+                  <div className="space-y-1.5">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
+                      {language === 'id' ? 'LOKASI / UNIT LAUNDRY' : 'LAUNDRY LOCATION / UNIT'}
+                    </span>
+                    <div className="relative">
+                      <select
+                        value={selectedLocation}
+                        onChange={(e) => setSelectedLocation(e.target.value as 'OBSIDIAN GYM' | 'BU RISMA')}
+                        className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-xs font-black text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer appearance-none"
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                          <label className="flex items-center gap-3 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={item.enabled}
-                              onChange={(e) => {
-                                const updated = [...dispatchItems];
-                                updated[idx].enabled = e.target.checked;
-                                if (e.target.checked && updated[idx].qty_out === 0) {
-                                  updated[idx].qty_out = 10; // smart default quantity
-                                }
-                                setDispatchItems(updated);
-                              }}
-                              className="rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-slate-950 cursor-pointer h-4 w-4"
-                            />
-                            <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
-                              <ItemIcon size={14} />
-                            </div>
-                            
-                            {/* Allow editing of custom item row names directly */}
-                            {idx >= 5 ? (
-                              <input 
-                                type="text"
-                                className="bg-transparent border-b border-indigo-500/30 focus:border-indigo-400 font-extrabold text-xs text-white focus:outline-none py-0.5 leading-none"
-                                value={item.name}
+                        <option value="OBSIDIAN GYM" className="bg-slate-900 text-white font-bold py-2">
+                          OBSIDIAN GYM
+                        </option>
+                        <option value="BU RISMA" className="bg-slate-900 text-white font-bold py-2">
+                          BU RISMA
+                        </option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                        <ChevronRight className="rotate-90" size={16} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scrollable list of category inputs */}
+                  <div className="space-y-3">
+                    {dispatchItems.map((item, idx) => {
+                      const ItemIcon = getItemIcon(item.name);
+                      const parsedSubtotal = (item.qty_out || 0) * (item.unit_cost || 0);
+                      
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                            item.enabled 
+                              ? 'bg-indigo-950/20 border-indigo-500/30 shadow-indigo-500/5' 
+                              : 'bg-black/30 border-white/5 opacity-60'
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
+                            <label className="flex items-center gap-3 cursor-pointer select-none min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={item.enabled}
                                 onChange={(e) => {
                                   const updated = [...dispatchItems];
-                                  updated[idx].name = e.target.value;
+                                  updated[idx].enabled = e.target.checked;
+                                  if (e.target.checked && updated[idx].qty_out === 0) {
+                                    updated[idx].qty_out = 10; // smart default quantity
+                                  }
                                   setDispatchItems(updated);
                                 }}
+                                className="rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-slate-950 cursor-pointer h-4 w-4 shrink-0"
                               />
-                            ) : (
-                              <span className="text-xs font-black text-white">{item.name}</span>
+                              <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 shrink-0">
+                                <ItemIcon size={14} />
+                              </div>
+                              
+                              {/* Allow editing of custom item row names directly */}
+                              {idx >= 4 ? (
+                                <input 
+                                  type="text"
+                                  className="bg-transparent border-b border-indigo-500/30 focus:border-indigo-400 font-extrabold text-xs text-white focus:outline-none py-0.5 leading-none w-full min-w-[120px]"
+                                  value={item.name}
+                                  onChange={(e) => {
+                                    const updated = [...dispatchItems];
+                                    updated[idx].name = e.target.value;
+                                    setDispatchItems(updated);
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-xs font-black text-white truncate">{item.name}</span>
+                              )}
+                            </label>
+
+                            {item.enabled && (
+                              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/10 px-2.5 py-1 rounded-lg self-start sm:self-auto shrink-0">
+                                Subtotal: Rp {parsedSubtotal.toLocaleString()}
+                              </span>
                             )}
-                          </label>
+                          </div>
 
                           {item.enabled && (
-                            <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/10 px-2.5 py-1 rounded-lg self-start sm:self-auto">
-                              Subtotal: Rp {parsedSubtotal.toLocaleString()}
-                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5">
+                              <div>
+                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                                  {language === 'id' ? 'Kuantitas Keluar' : 'Qty Out'}
+                                </label>
+                                <input
+                                  type="number"
+                                  required
+                                  min="1"
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
+                                  value={item.qty_out || ''}
+                                  onChange={(e) => {
+                                    const updated = [...dispatchItems];
+                                    updated[idx].qty_out = Math.max(1, parseInt(e.target.value) || 0);
+                                    setDispatchItems(updated);
+                                  }}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                                  {language === 'id' ? 'Biaya/Pcs (Rp)' : 'Cost/Pcs (Rp)'}
+                                </label>
+                                <input
+                                  type="number"
+                                  required
+                                  min="0"
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
+                                  value={item.unit_cost || ''}
+                                  onChange={(e) => {
+                                    const updated = [...dispatchItems];
+                                    updated[idx].unit_cost = Math.max(0, parseInt(e.target.value) || 0);
+                                    setDispatchItems(updated);
+                                  }}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                                  {language === 'id' ? 'Tautkan Stok' : 'Link Storage'}
+                                </label>
+                                <select
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:outline-none focus:border-indigo-500"
+                                  value={item.product_id}
+                                  onChange={(e) => {
+                                    const updated = [...dispatchItems];
+                                    updated[idx].product_id = e.target.value;
+                                    
+                                    // Update unit cost if mapped item possesses one
+                                    const prod = inventoryProducts.find(p => p.id === e.target.value);
+                                    if (prod && prod.unit_cost) {
+                                      updated[idx].unit_cost = Number(prod.unit_cost);
+                                      updated[idx].name = idx >= 5 ? prod.name : updated[idx].name;
+                                    }
+                                    
+                                    setDispatchItems(updated);
+                                  }}
+                                >
+                                  <option value="">-- {language === 'id' ? 'Tanpa Link' : 'No Sync'} --</option>
+                                  {inventoryProducts.map(p => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.name} ({p.stock_quantity} {language === 'id' ? 'tersedia' : 'pcs'})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
                           )}
                         </div>
-
-                        {item.enabled && (
-                          <div className="grid grid-cols-3 gap-3 pt-1">
-                            <div>
-                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                                {language === 'id' ? 'Kuantitas Keluar' : 'Qty Out'}
-                              </label>
-                              <input
-                                type="number"
-                                required
-                                min="1"
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
-                                value={item.qty_out || ''}
-                                onChange={(e) => {
-                                  const updated = [...dispatchItems];
-                                  updated[idx].qty_out = Math.max(1, parseInt(e.target.value) || 0);
-                                  setDispatchItems(updated);
-                                }}
-                              />
-                            </div>
-
-                            <div>
-                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                                {language === 'id' ? 'Biaya/Pcs (Rp)' : 'Cost/Pcs (Rp)'}
-                              </label>
-                              <input
-                                type="number"
-                                required
-                                min="0"
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
-                                value={item.unit_cost || ''}
-                                onChange={(e) => {
-                                  const updated = [...dispatchItems];
-                                  updated[idx].unit_cost = Math.max(0, parseInt(e.target.value) || 0);
-                                  setDispatchItems(updated);
-                                }}
-                              />
-                            </div>
-
-                            <div>
-                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                                {language === 'id' ? 'Tautkan Stok' : 'Link Storage'}
-                              </label>
-                              <select
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-[10px] text-white focus:outline-none focus:border-indigo-500"
-                                value={item.product_id}
-                                onChange={(e) => {
-                                  const updated = [...dispatchItems];
-                                  updated[idx].product_id = e.target.value;
-                                  
-                                  // Update unit cost if mapped item possesses one
-                                  const prod = inventoryProducts.find(p => p.id === e.target.value);
-                                  if (prod && prod.unit_cost) {
-                                    updated[idx].unit_cost = Number(prod.unit_cost);
-                                    updated[idx].name = idx >= 5 ? prod.name : updated[idx].name;
-                                  }
-                                  
-                                  setDispatchItems(updated);
-                                }}
-                              >
-                                <option value="">-- {language === 'id' ? 'Tanpa Link' : 'No Sync'} --</option>
-                                {inventoryProducts.map(p => (
-                                  <option key={p.id} value={p.id}>
-                                    {p.name} ({p.stock_quantity} {language === 'id' ? 'tersedia' : 'pcs'})
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Grid controls to extend custom items list */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
-                  <button
-                    type="button"
-                    onClick={addCustomItemRow}
-                    className="px-4 py-2 bg-slate-950 border border-white/5 hover:border-indigo-500/20 rounded-xl text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors cursor-pointer"
-                  >
-                    + {language === 'id' ? 'Tambah Barang Lain' : 'Add Custom Line'}
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="deduct-stock-cb"
-                      type="checkbox"
-                      checked={deductStock}
-                      onChange={(e) => setDeductStock(e.target.checked)}
-                      className="rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-slate-100 h-4 w-4 cursor-pointer"
-                    />
-                    <label htmlFor="deduct-stock-cb" className="text-[10px] font-bold text-slate-400 uppercase tracking-wide cursor-pointer">
-                      {language === 'id' ? 'Potong stok gudang saat dikirim' : 'Deduct warehouse stock on dispatch'}
-                    </label>
+                      );
+                    })}
                   </div>
+
+                  {/* Grid controls to extend custom items list */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={addCustomItemRow}
+                      className="px-3.5 py-2 bg-slate-950 border border-white/5 hover:border-indigo-500/20 rounded-xl text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors cursor-pointer"
+                    >
+                      + {language === 'id' ? 'Tambah Barang Lain' : 'Add Custom Line'}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="deduct-stock-cb"
+                        type="checkbox"
+                        checked={deductStock}
+                        onChange={(e) => setDeductStock(e.target.checked)}
+                        className="rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-slate-100 h-4 w-4 cursor-pointer"
+                      />
+                      <label htmlFor="deduct-stock-cb" className="text-[10px] font-bold text-slate-400 uppercase tracking-wide cursor-pointer">
+                        {language === 'id' ? 'Potong stok gudang saat dikirim' : 'Deduct warehouse stock on dispatch'}
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Additional Manifest Notes */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                      {language === 'id' ? 'Catatan Manifes & Vendor' : 'Vendor & Manifest Notes'}
+                    </label>
+                    <textarea 
+                      placeholder={language === 'id' ? 'Masukkan info tambahan / instruksi vendor laundry...' : 'Vendor directions or specific instructions...'}
+                      className="w-full bg-slate-950 border border-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500/50 transition-colors min-h-[60px] resize-none"
+                      value={globalNote}
+                      onChange={(e) => setGlobalNote(e.target.value)}
+                    />
+                  </div>
+
                 </div>
 
-                {/* Additional Manifest Notes */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
-                    {language === 'id' ? 'Catatan Manifes & Vendor' : 'Vendor & Manifest Notes'}
-                  </label>
-                  <textarea 
-                    placeholder={language === 'id' ? 'Masukkan info tambahan / instruksi vendor laundry...' : 'Vendor directions or specific instructions...'}
-                    className="w-full bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-500/50 transition-colors min-h-[60px] resize-none"
-                    value={globalNote}
-                    onChange={(e) => setGlobalNote(e.target.value)}
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-4 pt-4 border-t border-white/5">
+                {/* Actions Footer */}
+                <div className="p-4 sm:p-6 border-t border-white/5 bg-slate-900/90 backdrop-blur-md shrink-0 flex gap-3 sm:gap-4">
                   <button 
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 px-6 py-3.5 bg-slate-950 hover:bg-slate-900 border border-white/5 text-slate-400 rounded-2xl font-bold text-xs transition-all tracking-widest uppercase cursor-pointer"
+                    className="flex-1 px-4 sm:px-6 py-3 bg-slate-950 hover:bg-slate-900 border border-white/5 text-slate-400 rounded-2xl font-bold text-xs transition-all tracking-widest uppercase cursor-pointer"
                   >
                     {t.common.cancel}
                   </button>
                   <button 
                     type="submit"
-                    className="flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20 tracking-widest uppercase cursor-pointer"
+                    className="flex-1 px-4 sm:px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20 tracking-widest uppercase cursor-pointer"
                   >
                     {t.laundry.confirmDispatch}
                   </button>
@@ -1087,7 +1127,7 @@ export default function LaundryPage() {
       {/* Unified Return Modal */}
       <AnimatePresence>
         {isReturnModalOpen && selectedRecord && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1102,133 +1142,149 @@ export default function LaundryPage() {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-xl bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl z-10"
+              className="relative w-full max-w-xl max-h-[90vh] sm:max-h-[85vh] bg-slate-900 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl z-10 flex flex-col my-auto overflow-hidden"
             >
-              <div className="p-6 sm:p-8 border-b border-white/5 bg-white/[0.02]">
-                <h3 className="text-xl font-black text-white italic uppercase flex items-center gap-3">
-                  <ArrowDownLeft className="text-emerald-400" size={24} />
-                  PENERIMAAN <span className="text-emerald-500">LAPORAN KEMBALI</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
-                  {language === 'id' ? 'Catat kuantitas yang berhasil dibersihkan kembali ke gudang' : 'Log clean quantities received back in store'}
-                </p>
+              <div className="p-4 sm:p-6 border-b border-white/5 bg-white/[0.02] shrink-0 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-white italic uppercase flex items-center gap-2.5">
+                    <ArrowDownLeft className="text-emerald-400 shrink-0" size={22} />
+                    PENERIMAAN <span className="text-emerald-500">LAPORAN KEMBALI</span>
+                  </h3>
+                  <p className="text-[10px] sm:text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
+                    {language === 'id' ? 'Catat kuantitas yang berhasil dibersihkan kembali ke gudang' : 'Log clean quantities received back in store'}
+                  </p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsReturnModalOpen(false);
+                    setSelectedRecord(null);
+                  }}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer shrink-0"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
-              <form onSubmit={handleReturnActionSubmit} className="p-6 sm:p-8 space-y-6">
-                
-                <div className="space-y-3.5 max-h-[42vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {returnItems.map((item, idx) => {
-                    const remaining = item.qty_out - item.qty_in;
-                    const ItemIcon = getItemIcon(item.name);
+              <form onSubmit={handleReturnActionSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
+                  
+                  <div className="space-y-3">
+                    {returnItems.map((item, idx) => {
+                      const remaining = item.qty_out - item.qty_in;
+                      const ItemIcon = getItemIcon(item.name);
 
-                    return (
-                      <div key={idx} className="p-4 bg-black/40 border border-white/5 rounded-2xl space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="p-1 px-1.5 bg-indigo-500/10 rounded text-indigo-400">
-                              <ItemIcon size={12} />
+                      return (
+                        <div key={idx} className="p-3.5 sm:p-4 bg-black/40 border border-white/5 rounded-2xl space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="p-1 px-1.5 bg-indigo-500/10 rounded text-indigo-400 shrink-0">
+                                <ItemIcon size={12} />
+                              </div>
+                              <span className="text-xs font-extrabold text-white truncate">{item.name}</span>
                             </div>
-                            <span className="text-xs font-extrabold text-white">{item.name}</span>
-                          </div>
-                          <span className="text-[10px] font-mono text-slate-500">
-                            {language === 'id' ? `Total Kirk: ${item.qty_out} | Sedia Kembali: ${item.qty_in}` : `Total sent: ${item.qty_out} | Already back: ${item.qty_in}`}
-                          </span>
-                        </div>
-
-                        {remaining > 0 ? (
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
-                              {language === 'id' ? 'Diterima Kembali:' : 'Returning Now:'}
+                            <span className="text-[10px] font-mono text-slate-500">
+                              {language === 'id' ? `Total Kirim: ${item.qty_out} | Sedia Kembali: ${item.qty_in}` : `Total sent: ${item.qty_out} | Already back: ${item.qty_in}`}
                             </span>
-                            <input
-                              type="number"
-                              min="0"
-                              max={remaining}
-                              required
-                              className="flex-1 bg-slate-900 border border-white/5 rounded-xl px-2.5 py-1.5 text-center text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                              value={item.qty_returning_now}
-                              onChange={(e) => {
-                                const val = Math.min(remaining, Math.max(0, parseInt(e.target.value) || 0));
-                                const updated = [...returnItems];
-                                updated[idx].qty_returning_now = val;
-                                setReturnItems(updated);
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updated = [...returnItems];
-                                updated[idx].qty_returning_now = remaining;
-                                setReturnItems(updated);
-                              }}
-                              className="px-2.5 py-1.5 bg-slate-850 hover:bg-slate-800 rounded-lg text-[10px] font-black text-slate-300 transition-colors cursor-pointer"
-                            >
-                              MAX ({remaining})
-                            </button>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-widest pl-1">
-                            <Check size={12} />
-                            {language === 'id' ? 'Semua Handuk/Barang Telah Kembali' : 'Fully Returned to Storage'}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = returnItems.map(item => ({
-                        ...item,
-                        qty_returning_now: item.qty_out - item.qty_in
-                      }));
-                      setReturnItems(updated);
-                    }}
-                    className="px-4 py-2 bg-slate-950 border border-white/5 hover:border-emerald-500/20 rounded-xl text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors cursor-pointer"
-                  >
-                    {language === 'id' ? 'Terima Semua Unit Sisa' : 'Receive All Outstanding'}
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="return-stock-cb"
-                      type="checkbox"
-                      checked={returnDeductStock}
-                      onChange={(e) => setReturnDeductStock(e.target.checked)}
-                      className="rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-slate-100 h-4 w-4 cursor-pointer"
-                    />
-                    <label htmlFor="return-stock-cb" className="text-[10px] font-bold text-slate-400 uppercase tracking-wide cursor-pointer">
-                      {language === 'id' ? 'Pindahkan otomatis kembali ke stok katalog' : 'Automatically restore storage balance'}
-                    </label>
+                          {remaining > 0 ? (
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest shrink-0">
+                                {language === 'id' ? 'Diterima Kembali:' : 'Returning Now:'}
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                max={remaining}
+                                required
+                                className="flex-1 bg-slate-900 border border-white/5 rounded-xl px-2.5 py-1.5 text-center text-xs font-mono text-white focus:outline-none focus:border-emerald-500 min-w-0"
+                                value={item.qty_returning_now}
+                                onChange={(e) => {
+                                  const val = Math.min(remaining, Math.max(0, parseInt(e.target.value) || 0));
+                                  const updated = [...returnItems];
+                                  updated[idx].qty_returning_now = val;
+                                  setReturnItems(updated);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...returnItems];
+                                  updated[idx].qty_returning_now = remaining;
+                                  setReturnItems(updated);
+                                }}
+                                className="px-2.5 py-1.5 bg-slate-850 hover:bg-slate-800 rounded-lg text-[10px] font-black text-slate-300 transition-colors cursor-pointer shrink-0"
+                              >
+                                MAX ({remaining})
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-widest pl-1">
+                              <Check size={12} />
+                              {language === 'id' ? 'Semua Handuk/Barang Telah Kembali' : 'Fully Returned to Storage'}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = returnItems.map(item => ({
+                          ...item,
+                          qty_returning_now: item.qty_out - item.qty_in
+                        }));
+                        setReturnItems(updated);
+                      }}
+                      className="px-3.5 py-2 bg-slate-950 border border-white/5 hover:border-emerald-500/20 rounded-xl text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors cursor-pointer"
+                    >
+                      {language === 'id' ? 'Terima Semua Unit Sisa' : 'Receive All Outstanding'}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="return-stock-cb"
+                        type="checkbox"
+                        checked={returnDeductStock}
+                        onChange={(e) => setReturnDeductStock(e.target.checked)}
+                        className="rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-slate-100 h-4 w-4 cursor-pointer"
+                      />
+                      <label htmlFor="return-stock-cb" className="text-[10px] font-bold text-slate-400 uppercase tracking-wide cursor-pointer">
+                        {language === 'id' ? 'Pindahkan otomatis kembali ke stok katalog' : 'Automatically restore storage balance'}
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Bottom stats summary return */}
+                  <div className="p-3.5 sm:p-4 bg-[#0a0a0d] border border-white/5 rounded-2xl flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{language === 'id' ? 'TOTAL BARANG KEMBALI SEKARANG' : 'TOTAL RETURNING NOW'}</span>
+                    <span className="text-base font-mono font-black text-emerald-400">
+                      {returnItems.reduce((acc, i) => acc + i.qty_returning_now, 0)} Pcs
+                    </span>
+                  </div>
+
                 </div>
 
-                {/* Bottom stats summary return */}
-                <div className="p-4 bg-[#0a0a0d] border border-white/5 rounded-2xl flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{language === 'id' ? 'TOTAL BARANG KEMBALI SEKARANG' : 'TOTAL RETURNING NOW'}</span>
-                  <span className="text-base font-mono font-black text-emerald-400">
-                    {returnItems.reduce((acc, i) => acc + i.qty_returning_now, 0)} Pcs
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-4 pt-4 border-t border-white/5">
+                {/* Actions Footer */}
+                <div className="p-4 sm:p-6 border-t border-white/5 bg-slate-900/90 backdrop-blur-md shrink-0 flex gap-3 sm:gap-4">
                   <button 
                     type="button"
                     onClick={() => {
                       setIsReturnModalOpen(false);
                       setSelectedRecord(null);
                     }}
-                    className="flex-1 px-6 py-3.5 bg-slate-950 hover:bg-slate-900 border border-white/5 text-slate-400 rounded-2xl font-bold text-xs transition-all tracking-widest uppercase cursor-pointer"
+                    className="flex-1 px-4 sm:px-6 py-3 bg-slate-950 hover:bg-slate-900 border border-white/5 text-slate-400 rounded-2xl font-bold text-xs transition-all tracking-widest uppercase cursor-pointer"
                   >
                     {t.common.cancel}
                   </button>
                   <button 
                     type="submit"
-                    className="flex-1 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs transition-all shadow-lg shadow-emerald-500/20 tracking-widest uppercase cursor-pointer"
+                    className="flex-1 px-4 sm:px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs transition-all shadow-lg shadow-emerald-500/20 tracking-widest uppercase cursor-pointer"
                   >
                     {t.laundry.finalizeReturn}
                   </button>
