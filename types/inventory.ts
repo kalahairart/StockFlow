@@ -58,3 +58,32 @@ export interface RestockRequest {
   products?: Product | null;
 }
 
+export type AnnouncementType = 'info' | 'warning' | 'urgent' | 'maintenance';
+export type AnnouncementTarget = 'all' | 'admin' | 'engineering' | 'operator';
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  type: AnnouncementType;
+  target_role: AnnouncementTarget;
+  is_active: boolean;
+  start_date?: string;
+  end_date?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at?: string;
+  read_count?: number;
+}
+
+export interface AnnouncementRead {
+  id: string;
+  announcement_id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  user_role: string;
+  read_at: string;
+}
+
+
