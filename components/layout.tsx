@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages, Users, Activity, ClipboardList, FileSpreadsheet, ArrowRightLeft } from 'lucide-react';
+import { Package, LayoutDashboard, Box, History, Settings, LogOut, Search, User, ChevronRight, Menu, X as CloseIcon, WashingMachine, HelpCircle, Languages, Users, Activity, ClipboardList, FileSpreadsheet, ArrowRightLeft, Megaphone } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ import { useLanguage } from '@/hooks/use-language';
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isEngineering } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
 
@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
-  const userRole = isAdmin ? 'Super Admin' : 'Gym Attendance';
+  const userRole = isAdmin ? 'Super Admin' : (isEngineering ? 'Engineering' : 'Gym Attendance');
 
   return (
     <div className="flex h-screen bg-[#0A0A0C] text-slate-300 font-sans overflow-hidden">
@@ -68,6 +68,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
           {isAdmin && (
             <>
+              <NavItem icon={Megaphone} label={t.common.announcements} href="/admin/announcements" active={pathname === '/admin/announcements'} onClick={() => setIsMobileMenuOpen(false)} />
               <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} onClick={() => setIsMobileMenuOpen(false)} />
               <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} onClick={() => setIsMobileMenuOpen(false)} />
               <NavItem icon={FileSpreadsheet} label={t.common.logReport} href="/admin/log-report" active={pathname === '/admin/log-report'} onClick={() => setIsMobileMenuOpen(false)} />
@@ -124,6 +125,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} />
           {isAdmin && (
             <>
+              <NavItem icon={Megaphone} label={t.common.announcements} href="/admin/announcements" active={pathname === '/admin/announcements'} />
               <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} />
               <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} />
               <NavItem icon={FileSpreadsheet} label={t.common.logReport} href="/admin/log-report" active={pathname === '/admin/log-report'} />
