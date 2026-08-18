@@ -4,11 +4,15 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
+export type UserRole = 'admin' | 'operator' | 'user' | 'engineering';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isEngineering: boolean;
+  userRole: UserRole;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,13 +20,57 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   isAdmin: false,
+  isEngineering: false,
+  userRole: 'operator',
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dbProfile, setDbProfile] = useState<{ role?: string; full_name?: string } | null>(null);
 
-  const isAdmin = user?.email === 'candrarusmanndoko@gmail.com' || user?.email?.includes('admin') || user?.user_metadata?.role === 'admin' || false;
+  // Fetch actual profile from Supabase 'profiles' table whenever user changes
+  useEffect(() => {
+    async function fetchDatabaseProfile() {
+      if (!user) {
+        setDbProfile(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role, full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          setDbProfile(data);
+        } else {
+          // If not found by ID, try by email
+          if (user.email) {
+            const { data: emailData, error: emailErr } = await supabase
+              .from('profiles')
+              .select('role, full_name')
+              .eq('email', user.email)
+              .maybeSingle();
+            if (!emailErr && emailData) {
+              setDbProfile(emailData);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch profile from Supabase DB:', err);
+      }
+    }
+
+    fetchDatabaseProfile();
+  }, [user]);
+
+  const rawRole: string = (dbProfile?.role || user?.user_metadata?.role || '').toLowerCase();
+  const isAdmin = user?.email === 'candrarusmanndoko@gmail.com' || user?.email?.includes('admin') || rawRole === 'admin' || false;
+  const isEngineering = rawRole === 'engineering';
+  const userRole: UserRole = isAdmin ? 'admin' : (isEngineering ? 'engineering' : 'operator');
 
   useEffect(() => {
     if (user) {
@@ -36,8 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             body: JSON.stringify({
               id: user.id,
               email: user.email,
-              full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-              role: isAdmin ? 'admin' : 'operator',
+              full_name: dbProfile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0],
+              role: isAdmin ? 'admin' : (isEngineering ? 'engineering' : 'operator'),
             }),
           });
         } catch (e) {
@@ -46,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       syncUserSession();
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, isEngineering, dbProfile]);
 
   useEffect(() => {
     // Check active sessions and sets the user
@@ -113,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, signOut, isAdmin, isEngineering, userRole }}>
       {children}
     </AuthContext.Provider>
   );
