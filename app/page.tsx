@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { sendTelegramNotification, formatStockAlert } from '@/lib/notifications';
 import { toast } from 'sonner';
 import { useLanguage } from '@/hooks/use-language';
+import AnnouncementPopup from '@/components/announcements/announcement-popup';
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
@@ -560,6 +561,9 @@ export default function DashboardPage() {
         onClose={() => setIsProductModalOpen(false)}
         onSubmit={handleCreateProduct}
       />
+
+      {/* Broadcast Announcement Modal on Entering Dashboard */}
+      <AnnouncementPopup />
 
       {/* Quick Actions Footer Card */}
       <footer className="mt-12 py-10 border-t border-white/5">
