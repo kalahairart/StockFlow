@@ -54,7 +54,12 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
     setIsLoading(true);
     try {
       await onSubmit(data);
-      reset();
+      reset({
+        type: 'in',
+        unit_cost: 0,
+        product_id: '',
+        note: '',
+      });
       onClose();
     } catch (error) {
       console.error(error);
@@ -85,6 +90,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
           >
             <div className="relative p-6 sm:p-10">
               <button 
+                type="button"
                 onClick={onClose}
                 className="absolute right-4 top-4 sm:right-8 sm:top-8 p-2 text-slate-500 hover:text-white rounded-xl hover:bg-white/5 transition-all"
               >
@@ -115,7 +121,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                       transactionType === 'in' 
                         ? 'border-indigo-600 bg-indigo-600/10 text-indigo-100 shadow-lg shadow-indigo-900/20' 
                         : 'border-white/5 bg-white/5 text-slate-500 hover:border-white/10'
-                    }`}>
+                     }`}>
                       <ArrowUpCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
                       <span className="font-bold text-xs sm:text-sm tracking-tight">{t.common.stockIn}</span>
                     </div>
@@ -149,7 +155,9 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                     >
                       <option value="">{t.common.selectSku}</option>
                       {products.map(p => (
-                        <option key={p.id} value={p.id} className="bg-slate-900">{p.name} [{p.stock_quantity}]</option>
+                        <option key={p.id} value={p.id} className="bg-slate-900">
+                          {p.name} [{p.category ? `${p.category} | ` : ''}Stok: {p.stock_quantity}]
+                        </option>
                       ))}
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
@@ -213,6 +221,7 @@ export default function StockModal({ products, isOpen, onClose, onSubmit }: Stoc
                     {t.common.abort}
                   </button>
                   <button
+                    type="submit"
                     disabled={isLoading}
                     className={`order-1 sm:order-2 flex-1 px-6 py-3 sm:py-4 rounded-2xl font-bold text-white shadow-2xl transition-all text-xs sm:text-sm uppercase tracking-widest ${
                       transactionType === 'in' 
