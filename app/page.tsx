@@ -254,14 +254,24 @@ export default function DashboardPage() {
         }
       }
 
-      // If it's an 'in' transaction, update the product's unit_cost
-      if (data.type === 'in' && data.unit_cost > 0) {
-        const { error: updateError } = await supabase
-          .from('products')
-          .update({ unit_cost: data.unit_cost })
-          .eq('id', data.product_id);
-        
-        if (updateError) console.warn('Unit cost sync failed:', updateError);
+      // If it's an 'in' transaction, update the product's unit_cost and category if provided
+      if (data.type === 'in') {
+        const productUpdates: Record<string, any> = {};
+        if (data.unit_cost !== undefined && data.unit_cost > 0) {
+          productUpdates.unit_cost = data.unit_cost;
+        }
+        if (data.category && data.category.trim() !== '') {
+          productUpdates.category = data.category.trim();
+        }
+
+        if (Object.keys(productUpdates).length > 0) {
+          const { error: updateError } = await supabase
+            .from('products')
+            .update(productUpdates)
+            .eq('id', data.product_id);
+          
+          if (updateError) console.warn('Unit cost or category sync failed:', updateError);
+        }
       }
 
       await fetchDashboardData();
