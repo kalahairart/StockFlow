@@ -63,12 +63,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={ArrowRightLeft} label={t.common.warehouseTransfers} href="/warehouse-transfers" active={pathname === '/warehouse-transfers'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem icon={FileSpreadsheet} label={t.common.monthlyAudit} href="/monthly-audit" active={pathname === '/monthly-audit'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={ClipboardList} label={t.common.restockRequests} href="/restock-requests" active={pathname === '/restock-requests'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} onClick={() => setIsMobileMenuOpen(false)} />
           {isAdmin && (
             <>
+              <NavItem icon={FileSpreadsheet} label={t.common.monthlyAudit} href="/monthly-audit" active={pathname === '/monthly-audit'} onClick={() => setIsMobileMenuOpen(false)} />
               <NavItem icon={Megaphone} label={t.common.announcements} href="/admin/announcements" active={pathname === '/admin/announcements'} onClick={() => setIsMobileMenuOpen(false)} />
               <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} onClick={() => setIsMobileMenuOpen(false)} />
               <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} onClick={() => setIsMobileMenuOpen(false)} />
@@ -121,12 +121,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <NavItem icon={WashingMachine} label={t.common.laundry} href="/laundry" active={pathname === '/laundry'} />
           <NavItem icon={ArrowRightLeft} label={t.common.warehouseTransfers} href="/warehouse-transfers" active={pathname === '/warehouse-transfers'} />
           <NavItem icon={History} label={t.common.transactions} href="/transactions" active={pathname === '/transactions'} />
-          <NavItem icon={FileSpreadsheet} label={t.common.monthlyAudit} href="/monthly-audit" active={pathname === '/monthly-audit'} />
           <NavItem icon={ClipboardList} label={t.common.restockRequests} href="/restock-requests" active={pathname === '/restock-requests'} />
           <NavItem icon={HelpCircle} label={t.common.guide} href="/guide" active={pathname === '/guide'} />
           <NavItem icon={Settings} label={t.common.settings} href="/settings" active={pathname === '/settings'} />
           {isAdmin && (
             <>
+              <NavItem icon={FileSpreadsheet} label={t.common.monthlyAudit} href="/monthly-audit" active={pathname === '/monthly-audit'} />
               <NavItem icon={Megaphone} label={t.common.announcements} href="/admin/announcements" active={pathname === '/admin/announcements'} />
               <NavItem icon={Users} label={t.common.userList} href="/admin/users" active={pathname === '/admin/users'} />
               <NavItem icon={Activity} label={t.common.outgoingActivity} href="/admin/outgoing-activity" active={pathname === '/admin/outgoing-activity'} />
