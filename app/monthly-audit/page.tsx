@@ -32,8 +32,11 @@ import {
   FileText,
   ArrowDownRight,
   ArrowUpRight,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '@/lib/supabase';
 import { Product, Transaction } from '@/types/inventory';
@@ -94,7 +97,7 @@ export interface StockAnomaly {
 }
 
 export default function MonthlyAuditPage() {
-  const { user, isAdmin, isEngineering, userRole } = useAuth();
+  const { user, isAdmin, isEngineering, userRole, loading: authLoading } = useAuth();
   const { language, t } = useLanguage();
 
   const currentDate = useMemo(() => new Date(), []);
@@ -889,6 +892,42 @@ export default function MonthlyAuditPage() {
         'Stok Akhir': item.end_stock,
       }));
   }, [reconciliationData]);
+
+  if (authLoading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center space-y-4 py-24">
+        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest animate-pulse">
+          {language === 'id' ? 'Memeriksa Hak Akses Admin...' : 'Checking Permissions...'}
+        </p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-md mx-auto text-center h-[60vh]">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-3xl mb-6">
+          <Lock size={36} />
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-2">
+          {language === 'id' ? 'Akses Ditolak (Khusus Admin)' : 'Access Denied (Admin Only)'}
+        </h1>
+        <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+          {language === 'id'
+            ? 'Menu Audit Bulanan & Rekonsiliasi Saldo Stok ini hanya dapat dibuka atau diakses oleh Super Administrator.'
+            : 'The Monthly Audit & Stock Reconciliation module is restricted exclusively to Super Administrators.'}
+        </p>
+        <Link 
+          href="/"
+          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-indigo-900/40 uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+        >
+          <ArrowLeft size={14} />
+          {language === 'id' ? 'Kembali ke Dashboard' : 'Back to Dashboard'}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-16">
